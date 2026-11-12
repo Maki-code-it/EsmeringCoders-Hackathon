@@ -142,18 +142,50 @@ test('repository scopes every query by user_id and hides DB errors', async () =>
   await assert.rejects(() => broken.listPayrollRecords('u1'), (e) => e.code === 'DASHBOARD_DATA_ERROR' && !/secret/.test(e.message));
 });
 
-test('user guard needs req.user.id and ignores ids from the query', () => {
+test('user guard: scopes to req.user, ignores query ids, refuses anonymous in production', () => {
   const run = (req) => {
     let err;
     requireAuthenticatedUser(req, {}, (e) => { err = e; });
     return { req, err };
   };
-  assert.equal(run({ query: { userId: 'evil' } }).err.statusCode, 401);
   const ok = run({ user: { id: 'u9' }, query: { userId: 'evil' } });
   assert.equal(ok.err, undefined);
   assert.equal(ok.req.dashboardUserId, 'u9');
+
+  const prev = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = 'production';
+    assert.equal(run({ query: {} }).err.statusCode, 401);
+    process.env.NODE_ENV = 'development';
+    const dev = run({ query: { userId: 'evil' } });
+    assert.equal(dev.err, undefined);
+    assert.equal(dev.req.dashboardUserId, null);
+  } finally {
+    process.env.NODE_ENV = prev;
+  }
 });
-test('router rejects unauthenticated requests with the shared error format', async () => {
+
+test('repository leaves queries unscoped only when there is no user id', async () => {
+  const calls = [];
+  const chain = () => {
+    const q = {
+      select: () => q,
+      eq: (col, val) => (calls.push([col, val]), q),
+      in: () => q,
+      order: () => q,
+      limit: () => Promise.resolve({ data: [], error: null }),
+    };
+    return q;
+  };
+  const repo = createRepository(() => ({ from: chain }));
+  await repo.listDocuments(null);
+  assert.equal(calls.length, 0);
+  await repo.listDocuments('u1');
+  assert.deepEqual(calls, [['user_id', 'u1']]);
+});
+test('router rejects unauthenticated requests in production with the shared error format', async () => {
+  const prevEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
   const { default: router } = await import('../routes.js');
   const app = express();
   app.use('/api/dashboard', router);
@@ -169,6 +201,7 @@ test('router rejects unauthenticated requests with the shared error format', asy
     assert.equal(body.success, false);
     assert.equal(body.error.code, 'UNAUTHENTICATED');
   } finally {
+    process.env.NODE_ENV = prevEnv;
     server.close();
   }
 });

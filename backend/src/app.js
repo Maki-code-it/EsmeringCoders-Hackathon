@@ -3,6 +3,7 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import { sendSuccess } from './middleware/apiResponse.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import dashboardRouter from './modules/dashboard/routes.js'; // LOCAL TEST ONLY - do not commit
 
 const app = express();
 
@@ -32,6 +33,8 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 //   app.use('/api/payroll', payrollRouter);
 //   app.use('/api/dashboard', dashboardRouter);
 // ---------------------------------------------------------------------------
+
+app.use('/api/dashboard', dashboardRouter); // LOCAL TEST ONLY - do not commit
 
 app.get('/api/health', (req, res) =>
   sendSuccess(res, { status: 'healthy' }, 'SahodSuri API is running'),
