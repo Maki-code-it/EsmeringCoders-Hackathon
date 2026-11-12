@@ -5,6 +5,25 @@ const DOCUMENTS_BUCKET = 'documents';
 const DOCUMENT_COLUMNS =
   'id, user_id, document_type, file_name, file_path, file_type, file_size, extracted_text, extracted_data, status, error_message, created_at, updated_at';
 
+const ensureDocumentsBucket = async (supabase) => {
+  const { data: bucket, error: getError } = await supabase.storage.getBucket(DOCUMENTS_BUCKET);
+  if (bucket) return;
+
+  if (getError?.statusCode !== 404 && getError?.status !== 404) {
+    throw getError;
+  }
+
+  const { error: createError } = await supabase.storage.createBucket(DOCUMENTS_BUCKET, {
+    public: false,
+    fileSizeLimit: '10MB',
+    allowedMimeTypes: ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'],
+  });
+
+  if (createError && createError.statusCode !== 409 && createError.status !== 409) {
+    throw createError;
+  }
+};
+
 export const createDocumentRecord = async (record) => {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -95,6 +114,7 @@ export const deleteUserDocument = async (userId, documentId, filePath) => {
 
 export const createSignedUploadTarget = async (filePath) => {
   const supabase = getSupabaseAdminClient();
+  await ensureDocumentsBucket(supabase);
   const { data, error } = await supabase.storage
     .from(DOCUMENTS_BUCKET)
     .createSignedUploadUrl(filePath);
