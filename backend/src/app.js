@@ -5,6 +5,7 @@ import { sendSuccess } from './middleware/apiResponse.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import dashboardRouter from './modules/dashboard/routes.js'; // LOCAL TEST ONLY - do not commit
 import aiAssistantRouter from './modules/ai-assistant/routes.js';
+import payrollRouter from './modules/payroll/routes.js';
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.get('/api/health', (req, res) =>
 );
 
 app.use('/api/ai-assistant', aiAssistantRouter);
+app.use('/api/payroll', payrollRouter);
 
 // Must stay last
 app.use(notFoundHandler);
