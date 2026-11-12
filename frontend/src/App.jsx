@@ -5,6 +5,7 @@ import ApiStatus from '@/components/ApiStatus.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import EmptyState from '@/components/EmptyState.jsx';
 import DashboardPage from '@/modules/dashboard/DashboardPage.jsx';
+import AIAssistantPage from '@/modules/ai-assistant/AIAssistantPage.jsx';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -43,6 +44,8 @@ export default function App() {
     >
       {page === 'dashboard' ? (
         <DashboardPage onNavigate={navigate} />
+      ) : page === 'assistant' ? (
+        <AIAssistantPage />
       ) : (
         <>
           <PageHeader title={current.label} />
