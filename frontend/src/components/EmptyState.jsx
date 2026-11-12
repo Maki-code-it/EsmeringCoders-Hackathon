@@ -6,7 +6,7 @@ export default function EmptyState({ icon: Icon, title, description, children })
     <Card>
       <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
         {Icon && (
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-primary">
+          <span className="glass-control flex h-14 w-14 items-center justify-center rounded-full text-primary">
             <Icon className="h-6 w-6" aria-hidden="true" />
           </span>
         )}
