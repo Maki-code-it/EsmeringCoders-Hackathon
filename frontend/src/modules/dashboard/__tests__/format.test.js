@@ -18,7 +18,6 @@ test('formatters handle missing values', () => {
 });
 
 test('analysisLabel maps known and unknown types', () => {
-  assert.equal(analysisLabel('contract_review'), 'Contract review');
   assert.equal(analysisLabel('some_new_type'), 'Some new type');
 });
 

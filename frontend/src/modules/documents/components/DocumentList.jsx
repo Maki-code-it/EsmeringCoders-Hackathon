@@ -1,4 +1,4 @@
-import { FileText, Trash2, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { FileText, Trash2, CheckCircle2, Clock, AlertTriangle, Eye, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 
@@ -9,7 +9,7 @@ const STATUS_BADGES = {
   failed: { label: 'Failed', icon: AlertTriangle, className: 'text-destructive bg-destructive/15' },
 };
 
-export default function DocumentList({ documents, selectedId, onSelect, onDelete }) {
+export default function DocumentList({ documents, selectedId, onSelect, onDelete, onView }) {
   return (
     <Card>
       <CardHeader>
@@ -23,7 +23,10 @@ export default function DocumentList({ documents, selectedId, onSelect, onDelete
         ) : (
           <ul className="divide-y divide-border">
             {documents.map((doc) => {
-              const badge = STATUS_BADGES[doc.status] || STATUS_BADGES.uploaded;
+              const verified = Boolean(doc.extracted_data?.verified_by_user);
+              const badge = verified
+                ? { label: 'Verified', icon: BadgeCheck, className: 'text-emerald-700 bg-emerald-500/15' }
+                : STATUS_BADGES[doc.status] || STATUS_BADGES.uploaded;
               const BadgeIcon = badge.icon;
               const isSelected = doc.id === selectedId;
 
@@ -31,7 +34,7 @@ export default function DocumentList({ documents, selectedId, onSelect, onDelete
                 <li
                   key={doc.id}
                   className={`flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 ${
-                    isSelected ? 'rounded-md bg-accent/50 px-2' : ''
+                    isSelected ? 'rounded-2xl bg-accent/50 px-3' : ''
                   }`}
                 >
                   <button
@@ -55,6 +58,19 @@ export default function DocumentList({ documents, selectedId, onSelect, onDelete
                       <BadgeIcon className="h-3 w-3" aria-hidden="true" />
                       {badge.label}
                     </span>
+
+                    {verified && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        aria-label={`View ${doc.file_name}`}
+                        onClick={() => onView(doc)}
+                      >
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                        View
+                      </Button>
+                    )}
 
                     <Button
                       type="button"

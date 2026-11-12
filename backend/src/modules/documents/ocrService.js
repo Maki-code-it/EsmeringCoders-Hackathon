@@ -18,7 +18,7 @@ const matchFirst = (text, patterns) => {
 };
 
 /**
- * Structures raw OCR text into editable fields matching SahodSuri's
+ * Structures raw OCR text into editable fields matching Earnest's
  * payslip / contract domain so the user can review and correct values.
  */
 export const parseExtractedFields = (rawText, documentType, apiStructured = {}) => {

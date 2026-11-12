@@ -9,7 +9,7 @@ function SourceTag({ kind }) {
     payslip: 'bg-secondary text-secondary-foreground',
     calculated: 'bg-primary/10 text-primary',
   };
-  const labels = { payslip: 'From your payslip', calculated: 'Calculated by SahodSuri' };
+  const labels = { payslip: 'From your payslip', calculated: 'Calculated by Earnest' };
   return (
     <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', styles[kind])}>{labels[kind]}</span>
   );
@@ -132,7 +132,7 @@ function Flags({ flags }) {
               <li
                 key={`${flag.code}-${flag.message}`}
                 className={cn(
-                  'flex gap-2 rounded-lg p-3 text-sm',
+                  'flex gap-2 rounded-2xl p-3.5 text-sm',
                   warning ? 'bg-amber-50 text-amber-900' : 'bg-secondary text-secondary-foreground',
                 )}
               >
@@ -166,7 +166,7 @@ function HowCalculated({ breakdown }) {
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         {rows.map((row) => (
-          <div key={row.label} className="rounded-lg bg-muted p-3">
+          <div key={row.label} className="rounded-2xl bg-muted p-3.5">
             <p className="font-medium">{row.label}</p>
             <p className="break-words text-xs text-muted-foreground tabular-nums">
               {row.formula} = <span className="font-semibold text-foreground">{formatMoney(row.result)}</span>
@@ -174,7 +174,7 @@ function HowCalculated({ breakdown }) {
           </div>
         ))}
         <p className="pt-1 text-xs text-muted-foreground">
-          Share of gross = line amount / gross pay x 100. SahodSuri adds up what you entered. It does not check
+          Share of gross = line amount / gross pay x 100. Earnest adds up what you entered. It does not check
           whether contribution or tax rates are correct.
         </p>
       </CardContent>

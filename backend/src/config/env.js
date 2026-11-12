@@ -32,8 +32,8 @@ export const env = Object.freeze({
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   }),
 
-  // Placeholders only. Endpoints/request formats must come from the official
-  // OVERCLOCK 2026 Lumen documentation. Headers: "lumen-api-key", "lumen-api-secret".
+  // Lumen OCR and chat. Sent as the headers "lumen-api-key" and "lumen-api-secret".
+  // ocrEndpoint may be the gateway origin or end in /ocr or /ocr/documents.
   lumen: Object.freeze({
     apiKey: process.env.LUMEN_API_KEY || '',
     apiSecret: process.env.LUMEN_API_SECRET || '',

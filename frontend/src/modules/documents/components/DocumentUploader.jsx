@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { FileUp, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { FileUp, FileText, AlertCircle, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { validateSelectedFile } from '../lib/documentValidation.js';
@@ -21,6 +21,14 @@ export default function DocumentUploader({ onUploadComplete }) {
       return;
     }
     setSelectedFile(file);
+  };
+
+  const handleRemoveFile = (event) => {
+    // Do not let the click reach the drop zone, which would open the file picker.
+    event.stopPropagation();
+    setSelectedFile(null);
+    setError('');
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   const handleDrop = (event) => {
@@ -83,7 +91,7 @@ export default function DocumentUploader({ onUploadComplete }) {
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
             onClick={() => !uploading && inputRef.current?.click()}
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-8 text-center transition-colors ${
               dragActive
                 ? 'border-primary bg-accent/60'
                 : 'border-border hover:border-primary/60 hover:bg-accent/30'
@@ -104,6 +112,17 @@ export default function DocumentUploader({ onUploadComplete }) {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {(selectedFile.size / 1024).toFixed(1)} KB — Click to choose a different file
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={handleRemoveFile}
+                  disabled={uploading}
+                  aria-label={`Remove ${selectedFile.name}`}
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  Remove file
+                </Button>
               </>
             ) : (
               <>
@@ -121,7 +140,7 @@ export default function DocumentUploader({ onUploadComplete }) {
           {error && (
             <div
               role="alert"
-              className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="flex items-center gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
             >
               <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>

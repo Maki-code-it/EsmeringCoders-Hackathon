@@ -1,6 +1,6 @@
 /**
  * Payroll breakdown calculator. Pure, deterministic functions: no database, no
- * AI, no network. Every number shown as "Calculated by SahodSuri" comes from here.
+ * AI, no network. Every number shown as "Calculated by Earnest" comes from here.
  *
  * All math is done in whole centavos (integers) so totals never drift because
  * of floating-point rounding (e.g. 0.1 + 0.2).

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Save, Trash2 } from 'lucide-react';
+import { Link2Off, Paperclip, Save, Trash2 } from 'lucide-react';
+import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
 import BreakdownView from './components/BreakdownView.jsx';
 import PayslipForm from './components/PayslipForm.jsx';
 import RecordList from './components/RecordList.jsx';
-import { describeValidation, emptyForm, formatDate, formatPeriod, toPayload } from './lib/payslipForm.js';
-import { deleteRecord, getRecord, listRecords, previewBreakdown, saveRecord } from './services/payrollService.js';
+import { describeValidation, emptyForm, formFromExtracted, formatDate, formatPeriod, toPayload } from './lib/payslipForm.js';
+import { deleteRecord, getLinkedDocument, getRecord, listRecords, previewBreakdown, saveRecord } from './services/payrollService.js';
 
 const errorLines = (error, form) => {
   if (error?.code === 'VALIDATION_ERROR') return describeValidation(error.details, form);
@@ -33,6 +34,11 @@ export default function PayrollPage({ documentId = null }) {
   const [viewError, setViewError] = useState(null);
   const resultRef = useRef(null);
 
+  // The confirmed document this breakdown is linked to (and was prefilled from).
+  const [linked, setLinked] = useState(null); // { id, fileName }
+  const [linkError, setLinkError] = useState('');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   const loadRecords = useCallback(async (signal) => {
     try {
       setRecords(await listRecords({ signal }));
@@ -50,6 +56,29 @@ export default function PayrollPage({ documentId = null }) {
     loadRecords(controller.signal);
     return () => controller.abort();
   }, [loadRecords]);
+
+  // Arriving from 'Analyze in Payroll': load the document, link it, prefill the form.
+  useEffect(() => {
+    if (!documentId) return undefined;
+    const controller = new AbortController();
+    setLinkError('');
+    getLinkedDocument(documentId, { signal: controller.signal })
+      .then((doc) => {
+        if (doc.document_type !== 'payslip') {
+          setLinkError('Only payslips can be turned into a payroll breakdown.');
+          return;
+        }
+        setSelected(null);
+        setPreview(null);
+        setFormErrors([]);
+        setForm(formFromExtracted(doc.extracted_data || {}));
+        setLinked({ id: doc.id, fileName: doc.file_name });
+      })
+      .catch((error) => {
+        if (error?.name !== 'AbortError') setLinkError(error?.message || 'Could not load that document.');
+      });
+    return () => controller.abort();
+  }, [documentId]);
 
   // Any edit makes the previous result outdated.
   const changeForm = (next) => {
@@ -79,8 +108,9 @@ export default function PayrollPage({ documentId = null }) {
     setBusy(true);
     setFormErrors([]);
     try {
-      const saved = await saveRecord({ ...toPayload(form), documentId });
+      const saved = await saveRecord({ ...toPayload(form), documentId: linked?.id ?? null });
       setSelected(saved);
+      setLinked(null);
       setForm(emptyForm());
       setPreview(null);
       await loadRecords();
@@ -102,9 +132,6 @@ export default function PayrollPage({ documentId = null }) {
 
   const removeSelected = async () => {
     if (!selected) return;
-    // Native confirm keeps this simple and accessible.
-    // eslint-disable-next-line no-alert
-    if (!window.confirm('Delete this saved breakdown? This cannot be undone.')) return;
     setBusy(true);
     try {
       await deleteRecord(selected.record.id);
@@ -114,12 +141,19 @@ export default function PayrollPage({ documentId = null }) {
       setViewError(error?.message || 'Could not delete this breakdown.');
     } finally {
       setBusy(false);
+      setConfirmingDelete(false);
     }
   };
 
+  // 'New' always gives a blank form: drops the open record, the result, any errors and the document link.
   const startNew = () => {
     setSelected(null);
     setViewError(null);
+    setForm(emptyForm());
+    setPreview(null);
+    setFormErrors([]);
+    setLinked(null);
+    setLinkError('');
   };
 
   return (
@@ -132,7 +166,7 @@ export default function PayrollPage({ documentId = null }) {
       <div className="grid gap-6 xl:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-6">
           {viewError && (
-            <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+            <p role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-3.5 text-sm text-destructive">
               {viewError}
             </p>
           )}
@@ -150,7 +184,7 @@ export default function PayrollPage({ documentId = null }) {
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={startNew}>New breakdown</Button>
-                    <Button variant="ghost" onClick={removeSelected} disabled={busy} className="text-destructive">
+                    <Button variant="ghost" onClick={() => setConfirmingDelete(true)} disabled={busy} className="text-destructive">
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
                       Delete
                     </Button>
@@ -161,6 +195,27 @@ export default function PayrollPage({ documentId = null }) {
             </>
           ) : (
             <>
+              {linkError && (
+                <p role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-3.5 text-sm text-destructive">
+                  {linkError}
+                </p>
+              )}
+              {linked && (
+                <Card>
+                  <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                    <p className="flex items-center gap-2 text-sm">
+                      <Paperclip className="h-4 w-4 text-primary" aria-hidden="true" />
+                      <span>
+                        Filled from <strong>{linked.fileName}</strong>. Check every amount, then calculate.
+                      </span>
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={() => setLinked(null)}>
+                      <Link2Off className="h-4 w-4" aria-hidden="true" />
+                      Unlink
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
               <PayslipForm form={form} onChange={changeForm} onCalculate={calculate} busy={busy} errors={formErrors} />
 
               {preview && (
@@ -192,6 +247,15 @@ export default function PayrollPage({ documentId = null }) {
           )}
         </aside>
       </div>
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this breakdown?"
+        description="The saved breakdown and its lines are removed. This cannot be undone."
+        confirmLabel="Delete breakdown"
+        busy={busy}
+        onConfirm={removeSelected}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </>
   );
 }

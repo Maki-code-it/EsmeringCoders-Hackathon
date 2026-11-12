@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Calculator } from 'lucide-react';
 import PageHeader from '@/components/PageHeader.jsx';
+import ConfirmDialog from '@/components/ConfirmDialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import DocumentUploader from './components/DocumentUploader.jsx';
 import ExtractedDataEditor from './components/ExtractedDataEditor.jsx';
 import DocumentList from './components/DocumentList.jsx';
+import DocumentViewDialog from './components/DocumentViewDialog.jsx';
 import {
   uploadAndExtractDocument,
   listDocuments,
@@ -19,6 +21,9 @@ export default function DocumentsPage({ onNavigate }) {
   const [loadingList, setLoadingList] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null); // document awaiting confirmation
+  const [deleting, setDeleting] = useState(false);
+  const [viewing, setViewing] = useState(null); // verified document shown read-only
 
   const refreshDocuments = useCallback(async () => {
     setLoadingList(true);
@@ -58,17 +63,21 @@ export default function DocumentsPage({ onNavigate }) {
     setSelectedDoc(updated);
   };
 
-  const handleDelete = async (documentId) => {
-    // Native confirm keeps this simple and accessible (same as the payroll page).
-    // eslint-disable-next-line no-alert
-    if (!window.confirm('Delete this document? Its extracted text and contract reviews are removed. Saved payroll breakdowns stay.')) return;
+  const confirmDelete = async () => {
+    const documentId = pendingDelete?.id;
+    if (!documentId) return;
     setActionError('');
+    setDeleting(true);
     try {
       await deleteDocument(documentId);
     } catch (err) {
       setActionError(err?.message || 'Could not delete this document. Please try again.');
+      setDeleting(false);
+      setPendingDelete(null);
       return;
     }
+    setDeleting(false);
+    setPendingDelete(null);
     setDocuments((prev) => prev.filter((d) => d.id !== documentId));
     setSelectedDoc((current) => {
       if (current?.id !== documentId) return current;
@@ -120,9 +129,22 @@ export default function DocumentsPage({ onNavigate }) {
             documents={documents}
             selectedId={selectedDoc?.id}
             onSelect={setSelectedDoc}
-            onDelete={handleDelete}
+            onView={setViewing}
+            onDelete={(id) => setPendingDelete(documents.find((d) => d.id === id) || null)}
           />
         )}
+
+        <DocumentViewDialog document={viewing} onClose={() => setViewing(null)} />
+
+        <ConfirmDialog
+          open={Boolean(pendingDelete)}
+          title="Delete this document?"
+          description={`${pendingDelete?.file_name || 'This document'} and its extracted text will be removed. Saved payroll breakdowns stay, but lose their link to it.`}
+          confirmLabel="Delete document"
+          busy={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       </div>
     </>
   );

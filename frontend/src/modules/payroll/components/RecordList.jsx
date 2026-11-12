@@ -30,7 +30,7 @@ export default function RecordList({ records, status, selectedId, onSelect, onNe
                   onClick={() => onSelect(record.id)}
                   aria-current={record.id === selectedId ? 'true' : undefined}
                   className={cn(
-                    'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                    'w-full rounded-2xl px-3.5 py-2.5 text-left text-sm transition-colors',
                     record.id === selectedId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
                   )}
                 >

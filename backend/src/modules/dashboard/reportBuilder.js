@@ -53,4 +53,4 @@ export const REPORT_DISCLAIMER =
   'Ask your HR department to clarify any entry you are unsure about.';
 
 export const buildReportFilename = (now = new Date()) =>
-  `sahodsuri-payroll-report-${now.toISOString().slice(0, 10)}.csv`;
+  `earnest-payroll-report-${now.toISOString().slice(0, 10)}.csv`;

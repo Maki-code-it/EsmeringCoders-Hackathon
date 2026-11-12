@@ -60,14 +60,14 @@ const requestLumen = async (url, options = {}, stage = 'request') => {
 
 const FAQ_NOTICES = {
   declined: {
-    English: 'Lumen could not answer this one, so this answer comes from SahodSuri’s reviewed FAQ.',
-    Filipino: 'Hindi ito nasagot ng Lumen, kaya ang sagot na ito ay mula sa sinuring FAQ ng SahodSuri.',
-    Taglish: 'Hindi ito nasagot ng Lumen, kaya galing ang sagot na ito sa reviewed FAQ ng SahodSuri.',
+    English: 'Lumen could not answer this one, so this answer comes from Earnest’s reviewed FAQ.',
+    Filipino: 'Hindi ito nasagot ng Lumen, kaya ang sagot na ito ay mula sa sinuring FAQ ng Earnest.',
+    Taglish: 'Hindi ito nasagot ng Lumen, kaya galing ang sagot na ito sa reviewed FAQ ng Earnest.',
   },
   unavailable: {
-    English: 'Lumen AI is unavailable right now, so this answer comes from SahodSuri’s reviewed FAQ.',
-    Filipino: 'Hindi available ang Lumen AI ngayon, kaya ang sagot na ito ay mula sa sinuring FAQ ng SahodSuri.',
-    Taglish: 'Hindi available ang Lumen AI ngayon, kaya galing ang sagot na ito sa reviewed FAQ ng SahodSuri.',
+    English: 'Lumen AI is unavailable right now, so this answer comes from Earnest’s reviewed FAQ.',
+    Filipino: 'Hindi available ang Lumen AI ngayon, kaya ang sagot na ito ay mula sa sinuring FAQ ng Earnest.',
+    Taglish: 'Hindi available ang Lumen AI ngayon, kaya galing ang sagot na ito sa reviewed FAQ ng Earnest.',
   },
 };
 
@@ -143,7 +143,7 @@ router.post('/chat', validateRequest(validateChat), async (req, res, next) => {
     if (!sessionId) {
       const opened = await requestLumen(new URL(`instances/${encodeURIComponent(instanceId)}/sessions`, base), {
         method: 'POST',
-        body: JSON.stringify({ title: 'SahodSuri AI Assistant' }),
+        body: JSON.stringify({ title: 'Earnest AI Assistant' }),
       }, 'session creation');
       sessionId = opened?.Session?.id;
       if (!sessionId) throw new AppError('Lumen could not open a chat session. Please try again.', 502, 'AI_INVALID_RESPONSE');

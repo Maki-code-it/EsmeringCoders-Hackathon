@@ -38,6 +38,25 @@ export const createDocumentRecord = async (record) => {
   return data;
 };
 
+/** An earlier upload of the same file (same type, name and size) by this user. Failed uploads do not count. */
+export const findDuplicateDocument = async (userId, { document_type, file_name, file_size }) => {
+  if (!file_size) return null;
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from('documents')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('document_type', document_type)
+    .eq('file_name', file_name)
+    .eq('file_size', Number(file_size))
+    .neq('status', 'failed')
+    .limit(1);
+  if (error) {
+    throw new AppError('Failed to check for duplicate documents', 500, 'DOCUMENT_DUPLICATE_CHECK_FAILED');
+  }
+  return data?.[0] || null;
+};
+
 export const listUserDocuments = async (userId, { documentType } = {}) => {
   const supabase = getSupabaseAdminClient();
   let query = supabase
@@ -101,19 +120,13 @@ export const deleteUserDocument = async (userId, documentId, filePath) => {
     await supabase.storage.from(DOCUMENTS_BUCKET).remove([filePath]);
   }
 
-  // Rows that point at this document have no cascade: keep payroll records
-  // (just unlink them) and drop the document's contract reviews.
+  // payroll_records.document_id has no cascade: keep the records and just unlink them.
   const unlink = await supabase
     .from('payroll_records')
     .update({ document_id: null })
     .eq('document_id', documentId)
     .eq('user_id', userId);
-  const reviews = await supabase
-    .from('contract_reviews')
-    .delete()
-    .eq('document_id', documentId)
-    .eq('user_id', userId);
-  if (unlink.error || reviews.error) {
+  if (unlink.error) {
     throw new AppError('Failed to delete document', 500, 'DOCUMENT_DELETE_FAILED');
   }
 

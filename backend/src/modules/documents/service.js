@@ -9,6 +9,7 @@ import {
   updateUserDocument,
   deleteUserDocument,
   createSignedUploadTarget,
+  findDuplicateDocument,
   downloadPrivateDocument,
   createShortLivedDownloadUrl,
 } from './repository.js';
@@ -21,6 +22,14 @@ import {
 export const initiateDocumentUpload = async (userId, { document_type, file_name, file_type, file_size }) => {
   const documentId = crypto.randomUUID();
   const cleanName = sanitizeFileName(file_name);
+
+  if (await findDuplicateDocument(userId, { document_type, file_name: cleanName, file_size })) {
+    throw new AppError(
+      'You already uploaded this file. Open it from your documents list, or delete it first to upload it again.',
+      409,
+      'DUPLICATE_DOCUMENT',
+    );
+  }
   const filePath = `${userId}/${documentId}/${cleanName}`;
 
   const uploadTarget = await createSignedUploadTarget(filePath);

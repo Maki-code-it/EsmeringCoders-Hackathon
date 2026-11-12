@@ -96,7 +96,7 @@ export default function PayslipForm({ form, onChange, onCalculate, busy, errors 
           </div>
 
           {errors.length > 0 && (
-            <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+            <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-3.5 text-sm text-destructive">
               <p className="font-medium">Please fix the following:</p>
               <ul className="mt-1 list-disc pl-5">
                 {errors.map((message) => (

@@ -5,7 +5,7 @@ import { AppError } from '../../middleware/apiResponse.js';
  * Decides which user owns the payroll data for this request. This module does
  * not implement sign-in. It never reads a user id from the query string or body.
  *
- *   1. Signed-in user (req.user.id, set by the future auth middleware): use it.
+ *   1. Signed-in user (req.user.id, set by the auth middleware): use it.
  *   2. Production with no signed-in user: refuse with 401.
  *   3. Development with no sign-in: use DEV_USER_ID from .env, a real Supabase
  *      auth user created for local testing. Every query is still scoped to it.

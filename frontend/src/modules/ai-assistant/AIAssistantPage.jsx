@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, Send, Sparkles, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
+import { Select } from '@/components/ui/input.jsx';
 import { sendAssistantMessage } from './assistantService.js';
 
 // Common sahod questions; each one has a reviewed answer in the backend FAQ library.
@@ -16,7 +17,7 @@ const SUGGESTIONS = [
 
 const INTRO = {
   role: 'assistant',
-  content: 'Hi! I’m Lumen, your SahodSuri assistant. Ask me anything about your sahod: what gross and net pay mean, how overtime, holiday pay, or 13th month pay is computed, your deductions, leaves, final pay, or general Philippine labor rights. You can include reviewed payslip details, but remove personal information first.',
+  content: 'Hi! I’m Lumen, your Earnest assistant. Ask me anything about your sahod: what gross and net pay mean, how overtime, holiday pay, or 13th month pay is computed, your deductions, leaves, final pay, or general Philippine labor rights. You can include reviewed payslip details, but remove personal information first.',
   cautions: ['AI-generated: please verify important details. This is general information, not legal advice.'],
 };
 
@@ -75,11 +76,11 @@ export default function AIAssistantPage() {
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b px-5 py-3">
-          <div className="flex items-center gap-2 text-sm font-medium"><Bot className="h-4 w-4 text-primary" /> SahodSuri assistant</div>
+          <div className="flex items-center gap-2 text-sm font-medium"><Bot className="h-4 w-4 text-primary" /> Earnest assistant</div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground">Reply in
-            <select className="rounded-md border bg-background px-2 py-1 text-foreground" value={language} onChange={(event) => setLanguage(event.target.value)} aria-label="Reply language">
+            <Select className="h-8 w-auto py-0 text-xs text-foreground" value={language} onChange={(event) => setLanguage(event.target.value)} aria-label="Reply language">
               <option>English</option><option>Filipino</option><option>Taglish</option>
-            </select>
+            </Select>
           </label>
         </div>
         <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 sm:p-6" aria-live="polite">
@@ -88,7 +89,7 @@ export default function AIAssistantPage() {
               <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${message.role === 'user' ? 'bg-secondary' : 'bg-primary/10 text-primary'}`}>
                 {message.role === 'user' ? <UserRound className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
               </div>
-              <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              <div className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 {message.cautions?.map((caution) => <p key={caution} className="mt-3 border-t border-current/15 pt-2 text-xs opacity-80">{caution}</p>)}
                 {!!message.references?.length && <div className="mt-3 border-t border-current/15 pt-2 text-xs">
@@ -109,12 +110,12 @@ export default function AIAssistantPage() {
           {busy && <p className="pl-11 text-sm text-muted-foreground">Lumen is preparing an answer…</p>}
           <div ref={endRef} />
         </CardContent>
-        {messages.length === 1 && <div className="flex flex-wrap gap-2 px-4 pb-3 sm:px-6">{SUGGESTIONS.map((suggestion) => <button key={suggestion} className="rounded-full border px-3 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" onClick={() => setInput(suggestion)}>{suggestion}</button>)}</div>}
+        {messages.length === 1 && <div className="flex flex-wrap gap-2 px-4 pb-3 sm:px-6">{SUGGESTIONS.map((suggestion) => <button key={suggestion} type="button" className="glass-control rounded-full px-3.5 py-1.5 text-left text-xs text-secondary-foreground" onClick={() => setInput(suggestion)}>{suggestion}</button>)}</div>}
         <form onSubmit={submit} className="border-t p-3 sm:p-4">
           {error && <p role="alert" className="mb-2 text-sm text-destructive">{error}</p>}
           <div className="flex items-end gap-2">
             <label className="sr-only" htmlFor="assistant-question">Your question</label>
-            <textarea id="assistant-question" className="max-h-32 min-h-11 flex-1 resize-y rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="Ask about a payslip, contract, or labor rights…" rows={1} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} maxLength={3000} />
+            <textarea id="assistant-question" className="glass-field max-h-32 min-h-11 flex-1 resize-y rounded-2xl px-3.5 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40" placeholder="Ask about a payslip, contract, or labor rights…" rows={1} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} maxLength={3000} />
             <Button type="submit" disabled={!input.trim() || busy} aria-label="Send question"><Send className="h-4 w-4" /><span className="hidden sm:inline">Send</span></Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">Don’t share names, addresses, account numbers, or other sensitive personal details. AI responses can be incomplete.</p>

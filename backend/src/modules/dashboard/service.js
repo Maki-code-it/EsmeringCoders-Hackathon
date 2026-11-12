@@ -23,10 +23,9 @@ export const createService = (repo = dashboardRepository) => {
 
   return {
     async getSummary(userId) {
-      const [allRecords, documents, reviews] = await Promise.all([
+      const [allRecords, documents] = await Promise.all([
         repo.listPayrollRecords(userId),
         repo.listDocuments(userId),
-        repo.listContractReviews(userId),
       ]);
       const analyzed = allRecords.filter(isAnalyzed);
       return {
@@ -37,20 +36,19 @@ export const createService = (repo = dashboardRepository) => {
           byType: countBy(documents, (d) => d.document_type),
           byStatus: countBy(documents, (d) => d.status),
         },
-        analysesCount: analyzed.length + reviews.length,
+        analysesCount: analyzed.length,
       };
     },
 
     /**
      * History is assembled from existing tables (there is no history table):
-     * uploaded documents, payroll analyses and contract reviews, newest first.
-     * kind: 'payslip' | 'contract' | 'payroll' | 'contract_review'
+     * uploaded documents and payroll breakdowns, newest first.
+     * kind: 'payslip' | 'contract' | 'payroll'
      */
     async getHistory(userId, { limit, offset, type }) {
-      const [documents, records, reviews] = await Promise.all([
+      const [documents, records] = await Promise.all([
         repo.listDocuments(userId),
         repo.listPayrollRecords(userId),
-        repo.listContractReviews(userId),
       ]);
       const nameById = new Map(documents.map((d) => [d.id, d.file_name]));
 
@@ -66,13 +64,6 @@ export const createService = (repo = dashboardRepository) => {
           id: r.id,
           kind: 'payroll',
           status: r.analysis_status,
-          filename: nameById.get(r.document_id) ?? null,
-          createdAt: r.created_at,
-        })),
-        ...reviews.map((r) => ({
-          id: r.id,
-          kind: 'contract_review',
-          status: r.review_status,
           filename: nameById.get(r.document_id) ?? null,
           createdAt: r.created_at,
         })),

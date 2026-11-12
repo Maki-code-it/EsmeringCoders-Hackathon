@@ -36,6 +36,35 @@ export const createRepository = (getClient = getSupabaseAdminClient) => ({
     );
   },
 
+  /**
+   * Finds an existing record that is the same payslip: linked to the same
+   * document, or same employer and same pay period.
+   */
+  async findDuplicate(userId, { documentId, employerName, payPeriodStart, payPeriodEnd }) {
+    if (documentId) {
+      const byDocument = check(
+        await getClient()
+          .from('payroll_records')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('document_id', documentId)
+          .limit(1),
+      );
+      if (byDocument?.length) return byDocument[0];
+    }
+    if (!payPeriodStart || !payPeriodEnd) return null;
+
+    let query = getClient()
+      .from('payroll_records')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('pay_period_start', payPeriodStart)
+      .eq('pay_period_end', payPeriodEnd);
+    query = employerName ? query.ilike('employer_name', employerName.replace(/[%_\\]/g, '\\$&')) : query.is('employer_name', null);
+    const byPeriod = check(await query.limit(1));
+    return byPeriod?.[0] || null;
+  },
+
   async documentBelongsToUser(userId, documentId) {
     const row = check(
       await getClient()

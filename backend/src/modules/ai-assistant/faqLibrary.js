@@ -290,4 +290,3 @@ export function formatFaqForPrompt(faq) {
   return `Reviewed key facts (accurate; use these figures and formulas directly):\n${faq.facts}`;
 }
 
-export const FAQ_IDS = FAQS.map(({ id }) => id);

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button.jsx';
 function Wordmark({ className }) {
   return (
     <span className={cn('font-bold tracking-tight', className)}>
-      Sahod<span className="text-primary">Suri</span>
+      Earn<span className="text-primary">est</span>
     </span>
   );
 }
@@ -100,7 +100,7 @@ export default function AppLayout({ navItems, activeId, onNavigate, topbarRight,
           <Wordmark className="md:hidden" />
           {activeLabel && (
             <p className="hidden text-sm text-muted-foreground md:block">
-              SahodSuri <span aria-hidden="true">/</span>{' '}
+              Earnest <span aria-hidden="true">/</span>{' '}
               <span className="font-medium text-foreground">{activeLabel}</span>
             </p>
           )}

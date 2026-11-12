@@ -1,7 +1,7 @@
 const FALLBACK_NOTICE = {
-  English: 'Lumen declined this topic, so this is a short answer from SahodSuri’s reviewed reference library.',
-  Filipino: 'Hindi sinagot ng Lumen ang paksang ito, kaya ang maikling sagot na ito ay mula sa sinuring reference library ng SahodSuri.',
-  Taglish: 'Hindi sinagot ng Lumen ang topic na ito, kaya itong maikling sagot ay mula sa reviewed reference library ng SahodSuri.',
+  English: 'Lumen declined this topic, so this is a short answer from Earnest’s reviewed reference library.',
+  Filipino: 'Hindi sinagot ng Lumen ang paksang ito, kaya ang maikling sagot na ito ay mula sa sinuring reference library ng Earnest.',
+  Taglish: 'Hindi sinagot ng Lumen ang topic na ito, kaya itong maikling sagot ay mula sa reviewed reference library ng Earnest.',
 };
 
 const ANSWERS = [

@@ -52,6 +52,20 @@ export const createService = (repository = payrollRepository) => ({
       throw new AppError('Document not found', 404, 'DOCUMENT_NOT_FOUND');
     }
 
+    const duplicate = await repository.findDuplicate(userId, {
+      documentId: input.documentId,
+      employerName: input.employerName,
+      payPeriodStart: input.payPeriodStart,
+      payPeriodEnd: input.payPeriodEnd,
+    });
+    if (duplicate) {
+      throw new AppError(
+        'You already saved a breakdown for this payslip. Open it from Saved breakdowns, or delete it first.',
+        409,
+        'DUPLICATE_PAYROLL_RECORD',
+      );
+    }
+
     const recordRow = {
       document_id: input.documentId || null,
       employer_name: input.employerName,

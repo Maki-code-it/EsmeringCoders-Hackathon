@@ -11,3 +11,6 @@ export const getRecord = (id, options) => api.get(`/payroll/records/${encodeURIC
 export const saveRecord = (payslip, options) => api.post('/payroll/records', payslip, options);
 
 export const deleteRecord = (id, options) => api.delete(`/payroll/records/${encodeURIComponent(id)}`, options);
+
+/** The confirmed OCR document a breakdown can be linked to and prefilled from. */
+export const getLinkedDocument = async (documentId, options) => (await api.get(`/documents/${encodeURIComponent(documentId)}`, options)).document;

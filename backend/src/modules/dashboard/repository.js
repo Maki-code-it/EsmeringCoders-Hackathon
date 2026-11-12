@@ -8,7 +8,7 @@ import { AppError } from '../../middleware/apiResponse.js';
  * queries are unscoped. The dashboard never writes to other modules' tables.
  *
  * Tables used (see database/schema.sql): payroll_records, payroll_items,
- * documents, contract_reviews.
+ * documents.
  */
 
 const MAX_ROWS = 500;
@@ -60,16 +60,6 @@ export const createRepository = (getClient = getSupabaseAdminClient) => ({
     const query = getClient()
       .from('documents')
       .select('id, document_type, file_name, status, created_at');
-    const result = await forUser(query, userId)
-      .order('created_at', { ascending: false })
-      .limit(MAX_ROWS);
-    return rowsOf(result);
-  },
-
-  async listContractReviews(userId) {
-    const query = getClient()
-      .from('contract_reviews')
-      .select('id, document_id, review_status, created_at');
     const result = await forUser(query, userId)
       .order('created_at', { ascending: false })
       .limit(MAX_ROWS);

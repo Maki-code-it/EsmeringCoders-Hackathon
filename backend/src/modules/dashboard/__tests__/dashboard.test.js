@@ -91,9 +91,6 @@ const fakeRepo = {
   listDocuments: async () => [
     { id: 'd1', document_type: 'payslip', file_name: 'jan.pdf', status: 'completed', created_at: '2026-01-02T00:00:00Z' },
   ],
-  listContractReviews: async () => [
-    { id: 'cr1', document_id: 'd1', review_status: 'completed', created_at: '2026-01-03T00:00:00Z' },
-  ],
   listDeductions: async () => [{ payroll_record_id: 'a', category: 'government', description: 'SSS', amount: 100 }],
 };
 
@@ -101,17 +98,17 @@ test('service builds summary, history and report', async () => {
   const svc = createService(fakeRepo);
   const summary = await svc.getSummary('u1');
   assert.equal(summary.documents.byType.payslip, 1);
-  assert.equal(summary.analysesCount, 4); // 3 analyzed payroll records + 1 contract review
+  assert.equal(summary.analysesCount, 3); // analyzed payroll records
 
   const history = await svc.getHistory('u1', { limit: 2, offset: 0 });
-  assert.equal(history.total, 6); // 1 document + 4 payroll + 1 review
+  assert.equal(history.total, 5); // 1 document + 4 payroll
   assert.equal(history.items.length, 2);
   assert.equal(history.items[0].kind, 'payroll'); // newest first
-  const reviewsOnly = await svc.getHistory('u1', { limit: 10, offset: 0, type: 'contract_review' });
-  assert.equal(reviewsOnly.items[0].filename, 'jan.pdf');
+  const noReviews = await svc.getHistory('u1', { limit: 10, offset: 0, type: 'contract_review' });
+  assert.equal(noReviews.total, 0); // reviews no longer appear in history
 
   const report = await svc.getPayrollReport('u1', {}, new Date('2026-04-01T00:00:00Z'));
-  assert.equal(report.filename, 'sahodsuri-payroll-report-2026-04-01.csv');
+  assert.equal(report.filename, 'earnest-payroll-report-2026-04-01.csv');
   assert.match(report.csv, /^Pay period start,/);
   assert.equal(report.source, 'calculated');
 });
