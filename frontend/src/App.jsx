@@ -31,7 +31,11 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  const navigate = useCallback((id) => {
+  // The uploaded document a payroll breakdown should be linked to (if any).
+  const [payrollDocumentId, setPayrollDocumentId] = useState(null);
+
+  const navigate = useCallback((id, options = {}) => {
+    setPayrollDocumentId(id === 'payroll' ? options.documentId ?? null : null);
     window.location.hash = `#/${id}`;
   }, []);
 
@@ -51,7 +55,7 @@ export default function App() {
       ) : page === 'assistant' ? (
         <AIAssistantPage />
       ) : page === 'payroll' ? (
-        <PayrollPage />
+        <PayrollPage documentId={payrollDocumentId} />
       ) : (
         <>
           <PageHeader title={current.label} />

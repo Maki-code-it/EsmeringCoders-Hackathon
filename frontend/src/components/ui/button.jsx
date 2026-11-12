@@ -22,5 +22,7 @@ const buttonVariants = cva(
 );
 
 export function Button({ className, variant, size, ...props }) {
-  return <button className={cn(buttonVariants({ variant, size }), className)} {...props} />;
+  // Default to type="button" so a button inside a form never submits it by accident.
+  // Submit buttons must say type="submit" explicitly.
+  return <button type="button" className={cn(buttonVariants({ variant, size }), className)} {...props} />;
 }

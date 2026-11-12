@@ -36,6 +36,18 @@ export const createRepository = (getClient = getSupabaseAdminClient) => ({
     );
   },
 
+  async documentBelongsToUser(userId, documentId) {
+    const row = check(
+      await getClient()
+        .from('documents')
+        .select('id')
+        .eq('id', documentId)
+        .eq('user_id', userId)
+        .maybeSingle(),
+    );
+    return Boolean(row);
+  },
+
   /** Returns { record, items } or null when the record is not this user's. */
   async getRecord(userId, recordId) {
     const record = check(

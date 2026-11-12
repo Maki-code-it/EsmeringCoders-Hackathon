@@ -101,6 +101,22 @@ export const deleteUserDocument = async (userId, documentId, filePath) => {
     await supabase.storage.from(DOCUMENTS_BUCKET).remove([filePath]);
   }
 
+  // Rows that point at this document have no cascade: keep payroll records
+  // (just unlink them) and drop the document's contract reviews.
+  const unlink = await supabase
+    .from('payroll_records')
+    .update({ document_id: null })
+    .eq('document_id', documentId)
+    .eq('user_id', userId);
+  const reviews = await supabase
+    .from('contract_reviews')
+    .delete()
+    .eq('document_id', documentId)
+    .eq('user_id', userId);
+  if (unlink.error || reviews.error) {
+    throw new AppError('Failed to delete document', 500, 'DOCUMENT_DELETE_FAILED');
+  }
+
   const { error } = await supabase
     .from('documents')
     .delete()

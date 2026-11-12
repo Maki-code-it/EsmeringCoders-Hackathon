@@ -5,8 +5,7 @@ import { requireAuthenticatedUser } from './userContext.js';
 import { validateHistoryQuery, validateRangeQuery } from './validators.js';
 
 /**
- * Dashboard router. The project lead registers it in app.js, AFTER the shared
- * sign-in middleware that sets req.user = { id }:
+ * Dashboard router. The project lead registers it in app.js:
  *   import dashboardRouter from './modules/dashboard/routes.js';
  *   app.use('/api/dashboard', dashboardRouter);
  *

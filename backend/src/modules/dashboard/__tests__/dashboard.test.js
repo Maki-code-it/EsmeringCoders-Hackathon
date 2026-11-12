@@ -159,7 +159,13 @@ test('user guard: scopes to req.user, ignores query ids, refuses anonymous in pr
     process.env.NODE_ENV = 'development';
     const dev = run({ query: { userId: 'evil' } });
     assert.equal(dev.err, undefined);
-    assert.equal(dev.req.dashboardUserId, null);
+    const prevDev = process.env.DEV_USER_ID;
+    delete process.env.DEV_USER_ID;
+    assert.equal(run({ query: {} }).req.dashboardUserId, null);
+    process.env.DEV_USER_ID = 'dev-user';
+    assert.equal(run({ query: { userId: 'evil' } }).req.dashboardUserId, 'dev-user');
+    if (prevDev === undefined) delete process.env.DEV_USER_ID;
+    else process.env.DEV_USER_ID = prevDev;
   } finally {
     process.env.NODE_ENV = prev;
   }

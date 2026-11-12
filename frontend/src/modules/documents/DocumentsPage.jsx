@@ -18,6 +18,7 @@ export default function DocumentsPage({ onNavigate }) {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [loadingList, setLoadingList] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const refreshDocuments = useCallback(async () => {
     setLoadingList(true);
@@ -58,13 +59,20 @@ export default function DocumentsPage({ onNavigate }) {
   };
 
   const handleDelete = async (documentId) => {
-    await deleteDocument(documentId);
-    setDocuments((prev) => {
-      const remaining = prev.filter((d) => d.id !== documentId);
-      if (selectedDoc?.id === documentId) {
-        setSelectedDoc(remaining[0] || null);
-      }
-      return remaining;
+    // Native confirm keeps this simple and accessible (same as the payroll page).
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Delete this document? Its extracted text and contract reviews are removed. Saved payroll breakdowns stay.')) return;
+    setActionError('');
+    try {
+      await deleteDocument(documentId);
+    } catch (err) {
+      setActionError(err?.message || 'Could not delete this document. Please try again.');
+      return;
+    }
+    setDocuments((prev) => prev.filter((d) => d.id !== documentId));
+    setSelectedDoc((current) => {
+      if (current?.id !== documentId) return current;
+      return documents.find((d) => d.id !== documentId) || null;
     });
   };
 
@@ -75,7 +83,7 @@ export default function DocumentsPage({ onNavigate }) {
         description="Upload your payslip or contract, extract text with Lumen OCR, and verify the fields."
       >
         {onNavigate && selectedDoc?.document_type === 'payslip' && (
-          <Button variant="outline" onClick={() => onNavigate('payroll')}>
+          <Button variant="outline" onClick={() => onNavigate('payroll', { documentId: selectedDoc.id })}>
             <Calculator className="h-4 w-4" aria-hidden="true" />
             Analyze in Payroll
           </Button>
@@ -84,6 +92,12 @@ export default function DocumentsPage({ onNavigate }) {
 
       <div className="space-y-6">
         <DocumentUploader onUploadComplete={handleUploadComplete} />
+
+        {actionError && (
+          <p role="alert" className="text-sm text-destructive">
+            {actionError}
+          </p>
+        )}
 
         {selectedDoc && (
           <ExtractedDataEditor

@@ -15,7 +15,6 @@
 --   documents  1---* payroll_records
 --   payroll_records 1---* payroll_items      (item_type: earning | deduction)
 --   documents  1---* contract_reviews
---   auth.users 1---* chat_conversations 1---* chat_messages
 -- =============================================================================
 
 -- Shared trigger function to maintain updated_at
@@ -108,26 +107,6 @@ create table if not exists public.contract_reviews (
   constraint contract_reviews_document_id_fkey foreign key (document_id) references public.documents (id)
 );
 
-create table if not exists public.chat_conversations (
-  id          uuid not null default gen_random_uuid(),
-  user_id     uuid not null,
-  title       text default 'New Conversation'::text,
-  created_at  timestamptz default now(),
-  updated_at  timestamptz default now(),
-  constraint chat_conversations_pkey primary key (id),
-  constraint chat_conversations_user_id_fkey foreign key (user_id) references auth.users (id)
-);
-
-create table if not exists public.chat_messages (
-  id               uuid not null default gen_random_uuid(),
-  conversation_id  uuid not null,
-  role             text not null check (role = any (array['user'::text, 'assistant'::text])),
-  content          text not null,
-  created_at       timestamptz default now(),
-  constraint chat_messages_pkey primary key (id),
-  constraint chat_messages_conversation_id_fkey foreign key (conversation_id) references public.chat_conversations (id)
-);
-
 -- Indexes
 create index if not exists documents_user_created_idx          on public.documents (user_id, created_at desc);
 create index if not exists payroll_records_user_created_idx    on public.payroll_records (user_id, created_at);
@@ -135,8 +114,6 @@ create index if not exists payroll_records_document_id_idx     on public.payroll
 create index if not exists payroll_items_record_idx            on public.payroll_items (payroll_record_id);
 create index if not exists contract_reviews_user_created_idx   on public.contract_reviews (user_id, created_at desc);
 create index if not exists contract_reviews_document_id_idx    on public.contract_reviews (document_id);
-create index if not exists chat_conversations_user_idx         on public.chat_conversations (user_id, updated_at desc);
-create index if not exists chat_messages_conversation_idx      on public.chat_messages (conversation_id, created_at);
 
 -- updated_at triggers (dropped first because triggers have no IF NOT EXISTS)
 drop trigger if exists profiles_updated_at on public.profiles;
@@ -151,17 +128,12 @@ drop trigger if exists payroll_records_updated_at on public.payroll_records;
 create trigger payroll_records_updated_at before update on public.payroll_records
   for each row execute function public.set_updated_at();
 
-drop trigger if exists chat_conversations_updated_at on public.chat_conversations;
-create trigger chat_conversations_updated_at before update on public.chat_conversations
-  for each row execute function public.set_updated_at();
-
 -- -----------------------------------------------------------------------------
 -- ROW LEVEL SECURITY REQUIREMENTS (enable BEFORE any real data is stored)
 --   alter table <each table> enable row level security;
---   profiles, documents, payroll_records, contract_reviews, chat_conversations:
+--   profiles, documents, payroll_records, contract_reviews:
 --     authenticated users may access only rows where user_id (profiles: id) = auth.uid()
 --   payroll_items: via parent payroll_records.user_id = auth.uid()
---   chat_messages: via parent chat_conversations.user_id = auth.uid()
 --   No "anon" policies. The backend service-role key bypasses RLS, so backend
 --   code must always filter by the authenticated user's id.
 --

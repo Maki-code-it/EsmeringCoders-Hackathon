@@ -47,7 +47,13 @@ export const createService = (repository = payrollRepository) => ({
     const breakdown = calculateBreakdown(input);
     const { totals, netPayCheck } = breakdown;
 
+    // Link to the uploaded payslip, but only if it belongs to this user.
+    if (input.documentId && !(await repository.documentBelongsToUser(userId, input.documentId))) {
+      throw new AppError('Document not found', 404, 'DOCUMENT_NOT_FOUND');
+    }
+
     const recordRow = {
+      document_id: input.documentId || null,
       employer_name: input.employerName,
       pay_period_start: input.payPeriodStart,
       pay_period_end: input.payPeriodEnd,

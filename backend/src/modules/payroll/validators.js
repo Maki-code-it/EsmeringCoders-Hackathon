@@ -76,6 +76,10 @@ export const validatePayslipBody = (req) => {
     errors.payPeriodEnd = 'Pay period end must be on or after the start';
   }
 
+  if (!isEmpty(body.documentId) && !UUID.test(String(body.documentId))) {
+    errors.documentId = 'Invalid document id';
+  }
+
   if (!isEmpty(body.statedNetPay) && !isValidAmount(body.statedNetPay)) {
     errors.statedNetPay = 'Enter an amount from 0 to 10,000,000 (max 2 decimals)';
   }
@@ -88,6 +92,7 @@ export const validateRecordId = (req) =>
 
 /** Normalized payslip input (blank strings become null). */
 export const parsePayslipBody = (body = {}) => ({
+  documentId: isEmpty(body.documentId) ? null : String(body.documentId),
   employerName: isEmpty(body.employerName) ? null : body.employerName.trim(),
   payPeriodStart: body.payPeriodStart || null,
   payPeriodEnd: body.payPeriodEnd || null,

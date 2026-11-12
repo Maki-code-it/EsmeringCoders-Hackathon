@@ -19,7 +19,7 @@ const errorLines = (error, form) => {
  *   New:   enter payslip lines -> Calculate (backend, nothing saved) -> Save
  *   Saved: pick a record on the right to view its breakdown, or delete it
  */
-export default function PayrollPage() {
+export default function PayrollPage({ documentId = null }) {
   const [form, setForm] = useState(emptyForm);
   const [preview, setPreview] = useState(null);
   const [formErrors, setFormErrors] = useState([]);
@@ -79,7 +79,7 @@ export default function PayrollPage() {
     setBusy(true);
     setFormErrors([]);
     try {
-      const saved = await saveRecord(toPayload(form));
+      const saved = await saveRecord({ ...toPayload(form), documentId });
       setSelected(saved);
       setForm(emptyForm());
       setPreview(null);

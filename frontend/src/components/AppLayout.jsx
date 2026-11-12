@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/components/utils.js';
 import { Button } from '@/components/ui/button.jsx';
@@ -9,6 +9,14 @@ import { Button } from '@/components/ui/button.jsx';
  */
 export default function AppLayout({ navItems, activeId, onNavigate, topbarRight, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Escape closes the mobile menu.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKey = (event) => event.key === 'Escape' && setMenuOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
 
   const go = (id) => {
     onNavigate(id);
