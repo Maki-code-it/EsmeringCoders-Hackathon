@@ -20,11 +20,14 @@ export default function AIAssistantPage() {
   const [messages, setMessages] = useState([INTRO]);
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('English');
+  const [sessionId, setSessionId] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef(null);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages, busy]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, busy]);
 
   async function submit(event) {
     event?.preventDefault();
@@ -39,8 +42,12 @@ export default function AIAssistantPage() {
       const result = await sendAssistantMessage({
         question,
         language,
+        sessionId: sessionId || undefined,
+        topic: /contract|clause|employment term|probationary|termination/i.test(question) ? 'contract'
+          : /payslip|pay slip|deduction|salary|allowance|net pay|gross pay|withholding/i.test(question) ? 'payslip' : 'labor',
         history: history.slice(-11, -1).map(({ role, content }) => ({ role, content })),
       });
+      if (result.sessionId) setSessionId(result.sessionId);
       setMessages((current) => [...current, {
         role: 'assistant',
         content: result.answer,
@@ -80,7 +87,18 @@ export default function AIAssistantPage() {
               <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 <p className="whitespace-pre-wrap">{message.content}</p>
                 {message.cautions?.map((caution) => <p key={caution} className="mt-3 border-t border-current/15 pt-2 text-xs opacity-80">{caution}</p>)}
-                {!!message.references?.length && <p className="mt-2 text-xs opacity-80">References: {message.references.join(' · ')}</p>}
+                {!!message.references?.length && <div className="mt-3 border-t border-current/15 pt-2 text-xs">
+                  <p className="mb-1 font-medium">Sources</p>
+                  <ul className="list-inside list-disc space-y-1">
+                    {message.references.map((reference, referenceIndex) => {
+                      const title = typeof reference === 'string' ? reference : reference.title;
+                      const url = typeof reference === 'string' ? null : reference.url;
+                      return <li key={`${title}-${referenceIndex}`}>{url
+                        ? <a className="underline underline-offset-2" href={url} target="_blank" rel="noreferrer">{title}</a>
+                        : title}</li>;
+                    })}
+                  </ul>
+                </div>}
               </div>
             </div>
           ))}
@@ -92,7 +110,7 @@ export default function AIAssistantPage() {
           {error && <p role="alert" className="mb-2 text-sm text-destructive">{error}</p>}
           <div className="flex items-end gap-2">
             <label className="sr-only" htmlFor="assistant-question">Your question</label>
-            <textarea id="assistant-question" className="max-h-32 min-h-11 flex-1 resize-y rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="Ask about a payslip, contract, or labor rights…" rows={1} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} maxLength={4000} />
+            <textarea id="assistant-question" className="max-h-32 min-h-11 flex-1 resize-y rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="Ask about a payslip, contract, or labor rights…" rows={1} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} maxLength={3000} />
             <Button type="submit" disabled={!input.trim() || busy} aria-label="Send question"><Send className="h-4 w-4" /><span className="hidden sm:inline">Send</span></Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">Don’t share names, addresses, account numbers, or other sensitive personal details. AI responses can be incomplete.</p>
