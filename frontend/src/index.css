@@ -3,28 +3,53 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* shadcn/ui design tokens (neutral base). Extend via the project lead only. */
-/* SahodSuri soft sage palette. Light theme only for the MVP. */
+/*
+ * SahodSuri "liquid glass" theme (light only for the MVP).
+ * Pure CSS: translucent surfaces + backdrop blur/saturation + specular rims,
+ * floating over a soft green backdrop. No extra libraries.
+ *
+ * Surfaces use translucent tokens so every page inherits the glass look
+ * through the shared components. Change the theme here, not in modules.
+ */
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.975 0.01 145);
-  --foreground: oklch(0.25 0.03 150);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.03 150);
-  --primary: oklch(0.5 0.07 150);
-  --primary-foreground: oklch(0.98 0.01 145);
-  --secondary: oklch(0.94 0.025 145);
-  --secondary-foreground: oklch(0.32 0.05 150);
-  --muted: oklch(0.95 0.015 145);
-  --muted-foreground: oklch(0.5 0.03 150);
-  --accent: oklch(0.92 0.035 145);
-  --accent-foreground: oklch(0.3 0.05 150);
+  --radius: 0.875rem;
+
+  /* Text: darker than before for readability on glass */
+  --foreground: oklch(0.2 0.04 160);
+  --card-foreground: oklch(0.2 0.04 160);
+  --muted-foreground: oklch(0.37 0.045 160);
+  --secondary-foreground: oklch(0.27 0.07 158);
+  --accent-foreground: oklch(0.25 0.07 158);
+
+  /* Brand green: fresher than the old sage, still calm */
+  --primary: oklch(0.5 0.12 155);
+  --primary-foreground: oklch(0.99 0.01 150);
+  --ring: oklch(0.62 0.13 155);
   --destructive: oklch(0.55 0.2 27);
-  --border: oklch(0.9 0.02 145);
-  --input: oklch(0.9 0.02 145);
-  --ring: oklch(0.6 0.06 150);
-  --sidebar: oklch(0.955 0.02 145);
+
+  /* Translucent surfaces (sit on glass, let the green backdrop through) */
+  --background: oklch(1 0 0 / 0.55);
+  --card: oklch(1 0 0 / 0.5);
+  --secondary: oklch(0.93 0.05 155 / 0.6);
+  --muted: oklch(0.95 0.035 155 / 0.6);
+  --accent: oklch(0.9 0.07 155 / 0.55);
+  --sidebar: oklch(1 0 0 / 0.4);
+
+  /* Hairlines: green-tinted so table rows stay visible on glass */
+  --border: oklch(0.45 0.07 158 / 0.2);
+  --input: oklch(0.45 0.07 158 / 0.28);
+
+  /* Glass recipe */
+  --glass-blur: 22px;
+  --glass-highlight:
+    inset 0 1px 0 0 oklch(1 0 0 / 0.8),
+    inset 0 -1px 0 0 oklch(1 0 0 / 0.2),
+    inset 0 0 24px 0 oklch(1 0 0 / 0.18);
+  --glass-shadow:
+    0 12px 40px -14px oklch(0.35 0.08 158 / 0.3),
+    0 2px 8px -2px oklch(0.35 0.08 158 / 0.1);
 }
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -53,7 +78,292 @@
   * {
     @apply border-border;
   }
+
+  html {
+    min-height: 100%;
+    background-color: oklch(0.955 0.035 152);
+    /* Scales every rem-based size (text, spacing) about 6% larger: 16px -> 17px. */
+    font-size: 106.25%;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
+    position: relative;
+    min-height: 100dvh;
+    background: transparent;
+  }
+
+  /*
+   * Backdrop the glass refracts: soft green light pools plus a few
+   * semi-defined orbs, so the blur and saturation are actually visible.
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 22% 30%, oklch(0.76 0.14 158 / 0.55) 0 7rem, transparent 11rem),
+      radial-gradient(circle at 78% 22%, oklch(0.87 0.12 128 / 0.6) 0 6rem, transparent 10rem),
+      radial-gradient(circle at 64% 80%, oklch(0.78 0.11 172 / 0.5) 0 9rem, transparent 14rem),
+      radial-gradient(48rem 34rem at 8% 0%, oklch(0.86 0.11 155 / 0.8), transparent 70%),
+      radial-gradient(40rem 30rem at 100% 8%, oklch(0.9 0.09 130 / 0.65), transparent 70%),
+      radial-gradient(50rem 38rem at 85% 100%, oklch(0.83 0.1 168 / 0.6), transparent 70%),
+      radial-gradient(36rem 30rem at 0% 100%, oklch(0.9 0.08 145 / 0.7), transparent 70%),
+      linear-gradient(160deg, oklch(0.97 0.025 150), oklch(0.93 0.045 156));
+  }
+
+  ::selection {
+    background-color: oklch(0.8 0.12 155 / 0.45);
+  }
+
+  /* Native dropdown lists render outside the page; keep them solid. */
+  select option {
+    background-color: oklch(0.99 0.01 150);
+    color: var(--foreground);
+  }
+}
+
+@layer components {
+  /*
+   * Content glass (cards). Denser frost than the navigation chrome so text sits
+   * on an even, calm surface. The green still glows through the edges and blur.
+   */
+  .glass {
+    position: relative;
+    background-color: oklch(0.995 0.008 150 / 0.72);
+    background-image: linear-gradient(180deg, oklch(1 0 0 / 0.4), oklch(1 0 0 / 0.1));
+    border: 1px solid oklch(1 0 0 / 0.6);
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  }
+
+  /* Specular rim: bright where light hits (top-left), fading, with a green
+     bounce at the bottom-right, like light bending through a glass edge. */
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      oklch(1 0 0 / 0.95),
+      oklch(1 0 0 / 0.2) 30%,
+      oklch(1 0 0 / 0) 55%,
+      oklch(0.85 0.12 155 / 0.5) 100%
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /*
+   * Navigation chrome (sidebar, top bar): clearer, more "liquid" glass.
+   * More of the green shows through, with a stronger sheen and edge glow.
+   */
+  .glass-panel {
+    --glass-blur: 30px;
+    background-color: oklch(1 0 0 / 0.34);
+    background-image:
+      radial-gradient(140% 60% at 50% -10%, oklch(1 0 0 / 0.7), transparent 60%),
+      linear-gradient(160deg, oklch(1 0 0 / 0.45), oklch(1 0 0 / 0.08) 45%, oklch(0.9 0.08 150 / 0.18));
+    border-color: oklch(1 0 0 / 0.65);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.95),
+      inset 1px 0 0 oklch(1 0 0 / 0.5),
+      inset 0 -1px 0 oklch(1 0 0 / 0.25),
+      inset 0 0 32px oklch(1 0 0 / 0.25),
+      var(--glass-shadow);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(200%) brightness(1.04);
+    backdrop-filter: blur(var(--glass-blur)) saturate(200%) brightness(1.04);
+  }
+
+  /*
+   * Sidebar items: each one becomes a small glass lens.
+   *   rest   -> clear (no surface)
+   *   hover  -> clear glass lens rises out of the panel with a specular sheen
+   *   active -> green-tinted glass with a glossy top highlight
+   */
+  .nav-glass {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid transparent;
+    color: var(--secondary-foreground);
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      color 200ms ease;
+  }
+
+  /* Glossy sheen layer: top half catches the light */
+  .nav-glass::after {
+    content: "";
+    position: absolute;
+    inset: 1px 1px 50% 1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(180deg, oklch(1 0 0 / 0.75), oklch(1 0 0 / 0));
+    opacity: 0;
+    transition: opacity 200ms ease;
+    pointer-events: none;
+  }
+
+  .nav-glass:hover {
+    color: var(--foreground);
+    background-color: oklch(1 0 0 / 0.42);
+    border-color: oklch(1 0 0 / 0.85);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.95),
+      inset 0 -6px 12px -8px oklch(0.6 0.12 155 / 0.35),
+      0 6px 16px -8px oklch(0.35 0.08 158 / 0.35);
+    transform: translateX(3px);
+  }
+  .nav-glass:hover::after {
+    opacity: 1;
+  }
+  .nav-glass:active {
+    transform: translateX(3px) scale(0.98);
+  }
+
+  .nav-glass[aria-current="page"] {
+    color: oklch(0.99 0.01 150);
+    background-color: oklch(0.5 0.13 156 / 0.8);
+    background-image: linear-gradient(180deg, oklch(0.64 0.15 150 / 0.75), oklch(0.44 0.12 158 / 0.85));
+    border-color: oklch(1 0 0 / 0.45);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.6),
+      inset 0 -1px 0 oklch(0.25 0.08 158 / 0.3),
+      inset 0 0 14px oklch(0.85 0.14 150 / 0.35),
+      0 8px 22px -8px oklch(0.45 0.14 155 / 0.7);
+    text-shadow: 0 1px 1px oklch(0.25 0.08 158 / 0.35);
+  }
+  .nav-glass[aria-current="page"]::after {
+    opacity: 0.55;
+  }
+  .nav-glass[aria-current="page"]:hover {
+    transform: translateX(3px);
+    filter: brightness(1.05);
+  }
+
+  .nav-glass:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px oklch(0.62 0.13 155 / 0.45);
+  }
+
+  /* Clear glass controls: outline/secondary buttons, chips, status pill */
+  .glass-control {
+    background-color: oklch(1 0 0 / 0.5);
+    background-image: linear-gradient(180deg, oklch(1 0 0 / 0.65), oklch(1 0 0 / 0.15));
+    border: 1px solid oklch(1 0 0 / 0.75);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.9),
+      0 1px 2px oklch(0.35 0.08 158 / 0.08),
+      0 4px 14px -6px oklch(0.35 0.08 158 / 0.18);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+  }
+  .glass-control:hover {
+    background-color: oklch(1 0 0 / 0.7);
+  }
+
+  /* Green-tinted glass: primary buttons and the active nav item */
+  .glass-tinted {
+    color: var(--primary-foreground);
+    background-color: oklch(0.52 0.13 155);
+    background-image: linear-gradient(180deg, oklch(0.6 0.14 152 / 0.92), oklch(0.46 0.12 157 / 0.96));
+    border: 1px solid oklch(0.42 0.11 157 / 0.55);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.45),
+      inset 0 -1px 0 oklch(0.3 0.08 158 / 0.25),
+      0 6px 18px -6px oklch(0.45 0.13 155 / 0.6);
+    text-shadow: 0 1px 0 oklch(0.3 0.08 158 / 0.25);
+  }
+  .glass-tinted:hover {
+    filter: brightness(1.06) saturate(1.05);
+  }
+
+  /* Recessed glass well for form fields */
+  .glass-field {
+    color: var(--foreground);
+    background-color: oklch(1 0 0 / 0.82);
+    border: 1px solid oklch(0.45 0.07 158 / 0.24);
+    box-shadow:
+      inset 0 1px 2px oklch(0.35 0.08 158 / 0.08),
+      0 1px 0 oklch(1 0 0 / 0.7);
+  }
+  /* Date fields: keep "dd/mm/yyyy" clear of the calendar icon in narrow columns */
+  .glass-field[type="date"] {
+    min-width: 0;
+    padding-left: 0.7rem;
+    padding-right: 0.45rem;
+  }
+  .glass-field[type="date"]::-webkit-datetime-edit,
+  .glass-field[type="date"]::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+  .glass-field[type="date"]::-webkit-calendar-picker-indicator {
+    width: 0.95rem;
+    height: 0.95rem;
+    margin: 0 0 0 0.15rem;
+    padding: 0;
+    opacity: 0.7;
+    cursor: pointer;
+  }
+
+  .glass-field:focus,
+  .glass-field:focus-visible {
+    background-color: oklch(1 0 0 / 0.95);
+    border-color: oklch(0.55 0.12 155 / 0.55);
+  }
+
+  /* App mark in the sidebar and top bar */
+  .brand-mark {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.9rem;
+    color: oklch(0.99 0.01 150);
+    font-weight: 700;
+    background: linear-gradient(145deg, oklch(0.7 0.15 150), oklch(0.45 0.12 160));
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.5),
+      0 6px 16px -6px oklch(0.45 0.13 155 / 0.7);
+  }
+}
+
+/* Browsers without backdrop-filter: use solid frosted surfaces instead. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-panel,
+  .glass-control {
+    background-color: oklch(0.99 0.012 150 / 0.94);
+  }
+}
+
+/* Respect users who ask for less transparency or less motion. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-panel,
+  .glass-control {
+    background-color: oklch(0.99 0.012 150);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

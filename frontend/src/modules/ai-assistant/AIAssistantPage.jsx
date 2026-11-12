@@ -4,15 +4,19 @@ import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
 import { sendAssistantMessage } from './assistantService.js';
 
+// Common sahod questions; each one has a reviewed answer in the backend FAQ library.
 const SUGGESTIONS = [
-  'Can you explain the deductions on my payslip?',
-  'What should I check in my employment contract?',
-  'How is overtime pay generally calculated in the Philippines?',
+  'What is the difference between gross pay and net pay?',
+  'Paano kinukuwenta ang 13th month pay?',
+  'How much is holiday pay if I work on a regular holiday?',
+  'How is overtime pay calculated?',
+  'Bakit may withholding tax ako?',
+  'Kailan dapat ibigay ang final pay ko?',
 ];
 
 const INTRO = {
   role: 'assistant',
-  content: 'Hi! I’m Lumen, your SahodSuri assistant. Ask me about payslips, contract terms, or general Philippine labor rights. You can include reviewed document details, but remove personal information first.',
+  content: 'Hi! I’m Lumen, your SahodSuri assistant. Ask me anything about your sahod: what gross and net pay mean, how overtime, holiday pay, or 13th month pay is computed, your deductions, leaves, final pay, or general Philippine labor rights. You can include reviewed payslip details, but remove personal information first.',
   cautions: ['AI-generated: please verify important details. This is general information, not legal advice.'],
 };
 

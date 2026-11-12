@@ -1,19 +1,20 @@
 import { cva } from 'class-variance-authority';
 import { cn } from '@/components/utils.js';
 
+// Capsule-shaped glass buttons. Surfaces come from index.css (.glass-*).
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex select-none items-center justify-center gap-2 rounded-full text-sm font-medium transition-[background-color,box-shadow,filter,transform] duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-accent',
-        outline: 'border border-input bg-card hover:bg-accent',
-        ghost: 'hover:bg-accent',
+        default: 'glass-tinted',
+        secondary: 'glass-control text-secondary-foreground',
+        outline: 'glass-control',
+        ghost: 'border border-transparent hover:bg-white/45 hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.8)]',
       },
       size: {
-        default: 'h-10 px-4',
-        sm: 'h-8 px-3',
+        default: 'h-10 px-5',
+        sm: 'h-8 px-3.5',
         icon: 'h-10 w-10',
       },
     },
