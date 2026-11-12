@@ -1,0 +1,25 @@
+import { Router } from 'express';
+import { validateRequest } from '../../middleware/validateRequest.js';
+import { dashboardController as c } from './controller.js';
+import { requireAuthenticatedUser } from './userContext.js';
+import { validateHistoryQuery, validateRangeQuery } from './validators.js';
+
+/**
+ * Dashboard router. The project lead registers it in app.js, AFTER the shared
+ * sign-in middleware that sets req.user = { id }:
+ *   import dashboardRouter from './modules/dashboard/routes.js';
+ *   app.use('/api/dashboard', dashboardRouter);
+ *
+ * All routes are read-only (GET). This module does not implement sign-in.
+ */
+const router = Router();
+
+router.use(requireAuthenticatedUser);
+
+router.get('/summary', c.summary);
+router.get('/history', validateRequest(validateHistoryQuery), c.history);
+router.get('/salary-trends', validateRequest(validateRangeQuery), c.salaryTrends);
+router.get('/analytics', validateRequest(validateRangeQuery), c.analytics);
+router.get('/reports/payroll', validateRequest(validateRangeQuery), c.payrollReport);
+
+export default router;

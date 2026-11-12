@@ -1,29 +1,25 @@
 -- =============================================================================
--- SahodSuri PROPOSED database schema (REFERENCE ONLY)
+-- SahodSuri database schema (matches the current Supabase project)
 --
--- STATUS: DRAFT. Not approved. Do NOT execute, apply as a migration, or use to
--- create production tables until the project lead has reviewed and approved it.
+-- Every statement is safe to re-run: tables and indexes use IF NOT EXISTS,
+-- triggers are dropped (IF EXISTS) before being re-created, and the function
+-- uses CREATE OR REPLACE. IF NOT EXISTS skips a table that already exists; it
+-- does not alter its columns.
 --
--- Target: Supabase PostgreSQL. Auth users live in auth.users (managed by Supabase).
--- =============================================================================
-
--- -----------------------------------------------------------------------------
--- OWNERSHIP MODEL
--- Every user-owned row carries user_id -> auth.users(id), directly or through a
--- parent row. A user may only read/write their own rows. Only the project lead
--- changes this file and applies migrations.
+-- Only the project lead changes this file and applies migrations.
+-- Auth users live in auth.users (managed by Supabase).
 --
 -- RELATIONSHIPS
 --   auth.users 1---1 profiles
 --   auth.users 1---* documents
---   documents  1---* document_analyses
---   documents  1---* payroll_records          (a payslip document -> payroll record)
---   payroll_records 1---* payroll_deductions
---   auth.users 1---* analysis_history ; documents 1---* analysis_history
--- -----------------------------------------------------------------------------
+--   documents  1---* payroll_records
+--   payroll_records 1---* payroll_items      (item_type: earning | deduction)
+--   documents  1---* contract_reviews
+--   auth.users 1---* chat_conversations 1---* chat_messages
+-- =============================================================================
 
--- Shared trigger to maintain updated_at
-create or replace function set_updated_at()
+-- Shared trigger function to maintain updated_at
+create or replace function public.set_updated_at()
 returns trigger as $$
 begin
   new.updated_at = now();
@@ -31,146 +27,144 @@ begin
 end;
 $$ language plpgsql;
 
--- profiles: PK id (= auth.users.id)
-create table profiles (
-  id          uuid primary key references auth.users (id) on delete cascade,
+create table if not exists public.profiles (
+  id          uuid not null,
+  email       text,
   full_name   text,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now(),
+  constraint profiles_pkey primary key (id),
+  constraint profiles_id_fkey foreign key (id) references auth.users (id)
 );
 
--- documents: PK id; FK user_id
-create table documents (
-  id                 uuid primary key default gen_random_uuid(),
-  user_id            uuid not null references auth.users (id) on delete cascade,
-  document_type      text not null check (document_type in ('payslip', 'contract')),
-  original_filename  text not null,
-  storage_path       text not null,           -- path in a PRIVATE bucket; never a public URL
-  mime_type          text not null,
-  file_size          bigint not null check (file_size > 0),
-  upload_status      text not null default 'pending'
-                       check (upload_status in ('pending', 'uploaded', 'processing', 'processed', 'failed')),
-  created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now()
+create table if not exists public.documents (
+  id              uuid not null default gen_random_uuid(),
+  user_id         uuid not null,
+  document_type   text not null check (document_type = any (array['payslip'::text, 'contract'::text])),
+  file_name       text not null,
+  file_path       text not null,          -- path in a PRIVATE bucket; never a public URL
+  file_type       text,
+  file_size       bigint,
+  extracted_text  text,                   -- SENSITIVE. Never log.
+  extracted_data  jsonb default '{}'::jsonb,
+  status          text not null default 'uploaded'::text
+                    check (status = any (array['uploaded'::text, 'processing'::text, 'completed'::text, 'failed'::text])),
+  error_message   text,
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+  constraint documents_pkey primary key (id),
+  constraint documents_user_id_fkey foreign key (user_id) references auth.users (id)
 );
-create index documents_user_id_idx         on documents (user_id);
-create index documents_user_created_idx    on documents (user_id, created_at desc);
-create unique index documents_storage_path_uidx on documents (storage_path);
 
--- document_analyses: PK id; FK document_id, user_id
--- Holds OCR output and AI explanation. Keep these separate from calculated payroll
--- figures (payroll_records) to avoid duplicating extracted values.
-create table document_analyses (
-  id                   uuid primary key default gen_random_uuid(),
-  document_id          uuid not null references documents (id) on delete cascade,
-  user_id              uuid not null references auth.users (id) on delete cascade,
-  extracted_text       text,                  -- SENSITIVE. Never log. See open decisions.
-  analysis_result      jsonb,                 -- structured, labelled: extracted / calculated / ai_generated
-  verification_status  text not null default 'unverified'
-                         check (verification_status in ('unverified', 'user_corrected', 'user_confirmed')),
-  created_at           timestamptz not null default now(),
-  updated_at           timestamptz not null default now()
-);
-create index document_analyses_document_id_idx on document_analyses (document_id);
-create index document_analyses_user_id_idx     on document_analyses (user_id);
-
--- payroll_records: PK id; FK user_id, document_id
--- Stores user-confirmed/corrected payslip figures only.
-create table payroll_records (
-  id                 uuid primary key default gen_random_uuid(),
-  user_id            uuid not null references auth.users (id) on delete cascade,
-  document_id        uuid references documents (id) on delete set null,
+create table if not exists public.payroll_records (
+  id                 uuid not null default gen_random_uuid(),
+  user_id            uuid not null,
+  document_id        uuid,
+  employer_name      text,
   pay_period_start   date,
   pay_period_end     date,
-  basic_salary       numeric(12, 2),
-  gross_pay          numeric(12, 2),
-  total_deductions   numeric(12, 2),
-  net_pay            numeric(12, 2),
-  currency           char(3) not null default 'PHP',
-  created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now(),
-  check (pay_period_end is null or pay_period_start is null or pay_period_end >= pay_period_start)
+  payment_date       date,
+  basic_salary       numeric default 0,
+  total_allowances   numeric default 0,
+  total_deductions   numeric default 0,
+  gross_pay          numeric default 0,
+  net_pay            numeric default 0,
+  currency           text not null default 'PHP'::text,
+  analysis_status    text not null default 'pending'::text
+                       check (analysis_status = any (array['pending'::text, 'completed'::text, 'needs_review'::text])),
+  discrepancy_flags  jsonb default '[]'::jsonb,
+  ai_explanation     text,
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now(),
+  constraint payroll_records_pkey primary key (id),
+  constraint payroll_records_user_id_fkey foreign key (user_id) references auth.users (id),
+  constraint payroll_records_document_id_fkey foreign key (document_id) references public.documents (id)
 );
-create index payroll_records_user_id_idx     on payroll_records (user_id);
-create index payroll_records_document_id_idx on payroll_records (document_id);
-create index payroll_records_user_period_idx on payroll_records (user_id, pay_period_end desc);
 
--- payroll_deductions: PK id; FK payroll_record_id (ownership via parent)
-create table payroll_deductions (
-  id                 uuid primary key default gen_random_uuid(),
-  payroll_record_id  uuid not null references payroll_records (id) on delete cascade,
-  deduction_name     text not null,
-  amount             numeric(12, 2) not null check (amount >= 0),
-  description        text,
-  created_at         timestamptz not null default now()
+create table if not exists public.payroll_items (
+  id                 uuid not null default gen_random_uuid(),
+  payroll_record_id  uuid not null,
+  item_type          text not null check (item_type = any (array['earning'::text, 'deduction'::text])),
+  category           text,
+  description        text not null,
+  amount             numeric not null default 0,
+  created_at         timestamptz default now(),
+  constraint payroll_items_pkey primary key (id),
+  constraint payroll_items_payroll_record_id_fkey foreign key (payroll_record_id) references public.payroll_records (id)
 );
-create index payroll_deductions_record_idx on payroll_deductions (payroll_record_id);
 
--- analysis_history: PK id; FK user_id, document_id
-create table analysis_history (
-  id                uuid primary key default gen_random_uuid(),
-  user_id           uuid not null references auth.users (id) on delete cascade,
-  document_id       uuid references documents (id) on delete set null,
-  analysis_type     text not null,           -- e.g. 'ocr', 'payroll_breakdown', 'contract_explanation'
-  result_reference  uuid,                    -- id of the related row (see open decisions)
-  created_at        timestamptz not null default now()
+create table if not exists public.contract_reviews (
+  id            uuid not null default gen_random_uuid(),
+  user_id       uuid not null,
+  document_id   uuid not null,
+  summary       text,
+  findings      jsonb default '[]'::jsonb,
+  language      text default 'English'::text,
+  review_status text not null default 'pending'::text
+                  check (review_status = any (array['pending'::text, 'completed'::text, 'failed'::text])),
+  created_at    timestamptz default now(),
+  constraint contract_reviews_pkey primary key (id),
+  constraint contract_reviews_user_id_fkey foreign key (user_id) references auth.users (id),
+  constraint contract_reviews_document_id_fkey foreign key (document_id) references public.documents (id)
 );
-create index analysis_history_user_created_idx on analysis_history (user_id, created_at desc);
-create index analysis_history_document_id_idx  on analysis_history (document_id);
 
--- updated_at triggers
-create trigger profiles_updated_at          before update on profiles          for each row execute function set_updated_at();
-create trigger documents_updated_at         before update on documents         for each row execute function set_updated_at();
-create trigger document_analyses_updated_at before update on document_analyses for each row execute function set_updated_at();
-create trigger payroll_records_updated_at   before update on payroll_records   for each row execute function set_updated_at();
+create table if not exists public.chat_conversations (
+  id          uuid not null default gen_random_uuid(),
+  user_id     uuid not null,
+  title       text default 'New Conversation'::text,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now(),
+  constraint chat_conversations_pkey primary key (id),
+  constraint chat_conversations_user_id_fkey foreign key (user_id) references auth.users (id)
+);
+
+create table if not exists public.chat_messages (
+  id               uuid not null default gen_random_uuid(),
+  conversation_id  uuid not null,
+  role             text not null check (role = any (array['user'::text, 'assistant'::text])),
+  content          text not null,
+  created_at       timestamptz default now(),
+  constraint chat_messages_pkey primary key (id),
+  constraint chat_messages_conversation_id_fkey foreign key (conversation_id) references public.chat_conversations (id)
+);
+
+-- Indexes
+create index if not exists documents_user_created_idx          on public.documents (user_id, created_at desc);
+create index if not exists payroll_records_user_created_idx    on public.payroll_records (user_id, created_at);
+create index if not exists payroll_records_document_id_idx     on public.payroll_records (document_id);
+create index if not exists payroll_items_record_idx            on public.payroll_items (payroll_record_id);
+create index if not exists contract_reviews_user_created_idx   on public.contract_reviews (user_id, created_at desc);
+create index if not exists contract_reviews_document_id_idx    on public.contract_reviews (document_id);
+create index if not exists chat_conversations_user_idx         on public.chat_conversations (user_id, updated_at desc);
+create index if not exists chat_messages_conversation_idx      on public.chat_messages (conversation_id, created_at);
+
+-- updated_at triggers (dropped first because triggers have no IF NOT EXISTS)
+drop trigger if exists profiles_updated_at on public.profiles;
+create trigger profiles_updated_at before update on public.profiles
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists documents_updated_at on public.documents;
+create trigger documents_updated_at before update on public.documents
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists payroll_records_updated_at on public.payroll_records;
+create trigger payroll_records_updated_at before update on public.payroll_records
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists chat_conversations_updated_at on public.chat_conversations;
+create trigger chat_conversations_updated_at before update on public.chat_conversations
+  for each row execute function public.set_updated_at();
 
 -- -----------------------------------------------------------------------------
--- ROW LEVEL SECURITY REQUIREMENTS (must be enabled BEFORE any real data is stored)
---
+-- ROW LEVEL SECURITY REQUIREMENTS (enable BEFORE any real data is stored)
 --   alter table <each table> enable row level security;
+--   profiles, documents, payroll_records, contract_reviews, chat_conversations:
+--     authenticated users may access only rows where user_id (profiles: id) = auth.uid()
+--   payroll_items: via parent payroll_records.user_id = auth.uid()
+--   chat_messages: via parent chat_conversations.user_id = auth.uid()
+--   No "anon" policies. The backend service-role key bypasses RLS, so backend
+--   code must always filter by the authenticated user's id.
 --
--- Policies (draft, per role "authenticated"):
---   profiles            select/insert/update where id = auth.uid()
---   documents           select/insert/update/delete where user_id = auth.uid()
---   document_analyses   select/insert/update/delete where user_id = auth.uid()
---   payroll_records     select/insert/update/delete where user_id = auth.uid()
---   payroll_deductions  all operations where exists (
---                         select 1 from payroll_records r
---                         where r.id = payroll_record_id and r.user_id = auth.uid())
---   analysis_history    select/insert/delete where user_id = auth.uid()
---
--- No "anon" policies. The backend service-role key bypasses RLS, so backend code
--- must always filter by the authenticated user's id.
--- -----------------------------------------------------------------------------
-
--- -----------------------------------------------------------------------------
--- STORAGE REQUIREMENTS (private document storage)
---   * Bucket "documents": public = false.
---   * Object path convention: <user_id>/<document_id>/<sanitized_filename>
---   * Storage policies: authenticated users may select/insert/delete only objects
---     whose first folder segment equals auth.uid()::text.
---   * Serve files only via short-lived signed URLs created by the backend; never
---     store or expose permanent URLs.
---   * Enforce allowed MIME types (PDF, PNG, JPEG) and a maximum file size in the
---     backend and in bucket settings.
---   * Deleting a document must delete the storage object and dependent rows.
--- -----------------------------------------------------------------------------
-
--- -----------------------------------------------------------------------------
--- UNRESOLVED SCHEMA DECISIONS (project lead to decide)
---   1. Retain extracted_text at all? Option: store only structured fields and
---      discard raw OCR text after review to minimize sensitive data.
---   2. analysis_history.result_reference: polymorphic uuid vs. separate nullable
---      FKs (document_analysis_id, payroll_record_id) for referential integrity.
---   3. Should analysis_history be merged into document_analyses? Overlap risk.
---   4. Add payroll_records.source ('extracted' | 'user_corrected') or rely on
---      document_analyses.verification_status?
---   5. Store allowances / earnings as a payroll_earnings table (symmetrical to
---      payroll_deductions) for allowance categorization and overtime lines.
---   6. Add a deduction category (e.g. SSS, PhilHealth, Pag-IBIG, tax, other).
---   7. documents.document_type values and contract-specific fields.
---   8. Retention period and user-initiated account/data deletion policy.
---   9. Encryption of extracted_text/analysis_result at rest beyond Supabase defaults.
---  10. Audit logging without storing salary or personal identifiers.
---  11. Auto-create profiles row via auth trigger vs. on first login.
+-- STORAGE: bucket "documents" must be private (public = false), with path
+--   <user_id>/<document_id>/<sanitized_filename>, served by short-lived signed URLs.
 -- -----------------------------------------------------------------------------
