@@ -3,6 +3,7 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import { sendSuccess } from './middleware/apiResponse.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import aiAssistantRouter from './modules/ai-assistant/routes.js';
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.get('/api/health', (req, res) =>
   sendSuccess(res, { status: 'healthy' }, 'SahodSuri API is running'),
 );
+
+app.use('/api/ai-assistant', aiAssistantRouter);
 
 // Must stay last
 app.use(notFoundHandler);
