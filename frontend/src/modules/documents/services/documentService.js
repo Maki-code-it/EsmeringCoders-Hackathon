@@ -1,5 +1,5 @@
 import { api } from '@/services/apiClient.js';
-import { supabase } from '@/config/supabase.js';
+import { getSupabaseClient } from '@/config/supabase.js';
 
 /**
  * Uploads a document to the private Supabase `documents` bucket using a
@@ -13,6 +13,7 @@ export async function uploadAndExtractDocument(file, documentType) {
     file_size: file.size,
   });
 
+  const supabase = getSupabaseClient();
   if (supabase && upload?.path && upload?.token) {
     const { error: storageError } = await supabase.storage
       .from('documents')

@@ -7,6 +7,7 @@ import EmptyState from '@/components/EmptyState.jsx';
 import DashboardPage from '@/modules/dashboard/DashboardPage.jsx';
 import AIAssistantPage from '@/modules/ai-assistant/AIAssistantPage.jsx';
 import PayrollPage from '@/modules/payroll/PayrollPage.jsx';
+import DocumentsPage from '@/modules/documents/DocumentsPage.jsx';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,6 +46,8 @@ export default function App() {
     >
       {page === 'dashboard' ? (
         <DashboardPage onNavigate={navigate} />
+      ) : page === 'upload' ? (
+        <DocumentsPage onNavigate={navigate} />
       ) : page === 'assistant' ? (
         <AIAssistantPage />
       ) : page === 'payroll' ? (

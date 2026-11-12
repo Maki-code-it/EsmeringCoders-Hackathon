@@ -4,6 +4,7 @@ import { env } from './config/env.js';
 import { sendSuccess } from './middleware/apiResponse.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import dashboardRouter from './modules/dashboard/routes.js'; // LOCAL TEST ONLY - do not commit
+import documentsRouter from './modules/documents/routes.js';
 import aiAssistantRouter from './modules/ai-assistant/routes.js';
 import payrollRouter from './modules/payroll/routes.js';
 
@@ -42,6 +43,7 @@ app.get('/api/health', (req, res) =>
   sendSuccess(res, { status: 'healthy' }, 'SahodSuri API is running'),
 );
 
+app.use('/api/documents', documentsRouter);
 app.use('/api/ai-assistant', aiAssistantRouter);
 app.use('/api/payroll', payrollRouter);
 
