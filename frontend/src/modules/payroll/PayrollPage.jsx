@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link2Off, Paperclip, Save, Trash2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog.jsx';
+import ActionCompleteDialog from '@/components/ActionCompleteDialog.jsx';
 import PageHeader from '@/components/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
 import BreakdownView from './components/BreakdownView.jsx';
+import BreakdownSummary from './components/BreakdownSummary.jsx';
 import PayslipForm from './components/PayslipForm.jsx';
 import RecordList from './components/RecordList.jsx';
 import { describeValidation, emptyForm, formFromExtracted, formatDate, formatPeriod, toPayload } from './lib/payslipForm.js';
@@ -27,6 +29,8 @@ export default function PayrollPage({ documentId = null }) {
   const [listError, setListError] = useState(null);
 
   const [selected, setSelected] = useState(null); // { record, breakdown } of a saved record
+  const [summaryLanguage, setSummaryLanguage] = useState('English');
+  const [actionNotice, setActionNotice] = useState('');
   const [viewError, setViewError] = useState(null);
   const resultRef = useRef(null);
 
@@ -81,6 +85,7 @@ export default function PayrollPage({ documentId = null }) {
     setForm(next);
     setPreview(null);
     setFormErrors([]);
+    setActionNotice('');
   };
 
   const scrollToResult = () =>
@@ -89,8 +94,10 @@ export default function PayrollPage({ documentId = null }) {
   const calculate = async () => {
     setBusy(true);
     setFormErrors([]);
+    setActionNotice('');
     try {
       setPreview(await previewBreakdown(toPayload(form)));
+      setActionNotice('Breakdown calculated. Review the figures below.');
       scrollToResult();
     } catch (error) {
       setPreview(null);
@@ -103,6 +110,7 @@ export default function PayrollPage({ documentId = null }) {
   const save = async () => {
     setBusy(true);
     setFormErrors([]);
+    setActionNotice('');
     try {
       const saved = await saveRecord({ ...toPayload(form), documentId: linked?.id ?? null });
       setSelected(saved);
@@ -110,6 +118,7 @@ export default function PayrollPage({ documentId = null }) {
       setForm(emptyForm());
       setPreview(null);
       await loadRecords();
+      setActionNotice('Breakdown saved successfully.');
     } catch (error) {
       setFormErrors(errorLines(error, form));
     } finally {
@@ -119,8 +128,10 @@ export default function PayrollPage({ documentId = null }) {
 
   const openRecord = async (id) => {
     setViewError(null);
+    setActionNotice('');
     try {
-      setSelected(await getRecord(id));
+      const record = await getRecord(id);
+      setSelected(record);
     } catch (error) {
       setViewError(error?.message || 'Could not load this breakdown.');
     }
@@ -129,6 +140,7 @@ export default function PayrollPage({ documentId = null }) {
   const removeSelected = async () => {
     if (!selected) return;
     setBusy(true);
+    setActionNotice('');
     try {
       await deleteRecord(selected.record.id);
       setSelected(null);
@@ -150,6 +162,7 @@ export default function PayrollPage({ documentId = null }) {
     setFormErrors([]);
     setLinked(null);
     setLinkError('');
+    setActionNotice('');
   };
 
   return (
@@ -230,13 +243,18 @@ export default function PayrollPage({ documentId = null }) {
           )}
         </div>
 
-        <aside className="space-y-2">
+        <aside className="space-y-4">
           <RecordList
             records={records}
             status={listStatus}
             selectedId={selected?.record.id}
             onSelect={openRecord}
             onNew={startNew}
+          />
+          <BreakdownSummary
+            breakdown={selected?.breakdown || preview}
+            language={summaryLanguage}
+            onLanguageChange={setSummaryLanguage}
           />
           {listStatus === 'error' && listError?.message && (
             <p className="px-1 text-xs text-muted-foreground">{listError.message}</p>
@@ -251,6 +269,12 @@ export default function PayrollPage({ documentId = null }) {
         busy={busy}
         onConfirm={removeSelected}
         onCancel={() => setConfirmingDelete(false)}
+      />
+      <ActionCompleteDialog
+        open={Boolean(actionNotice)}
+        title={actionNotice.startsWith('Breakdown calculated') ? 'Breakdown calculated' : 'Breakdown saved'}
+        description={actionNotice}
+        onClose={() => setActionNotice('')}
       />
     </>
   );

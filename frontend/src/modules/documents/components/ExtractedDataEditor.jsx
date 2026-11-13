@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, RefreshCw, Save, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
+import ActionCompleteDialog from '@/components/ActionCompleteDialog.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { validateExtractedFields } from '../lib/documentValidation.js';
 import { CONTRACT_FIELDS, PAYSLIP_FIELDS } from '../lib/documentFields.js';
@@ -13,6 +14,7 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
   const [saving, setSaving] = useState(false);
   const [reExtracting, setReExtracting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [completion, setCompletion] = useState(null);
 
   useEffect(() => {
     if (!document) return;
@@ -20,6 +22,7 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
     setRawText(document.extracted_text || '');
     setFieldErrors({});
     setFeedback(null);
+    setCompletion(null);
   }, [document]);
 
   if (!document) return null;
@@ -48,7 +51,10 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
         extracted_text: '',
       });
       setRawText('');
-      setFeedback({ type: 'success', text: 'Saved. Your confirmed values are kept and the raw OCR text was removed.' });
+      setCompletion({
+        title: 'Extraction confirmed and saved',
+        description: 'Your verified values are saved and the raw OCR text was removed.',
+      });
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -62,9 +68,10 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
   const handleReExtract = async () => {
     setReExtracting(true);
     setFeedback(null);
+    setCompletion(null);
     try {
       await onReExtract(document.id);
-      setFeedback({ type: 'success', text: 'Re-extracted text using Lumen OCR.' });
+      setCompletion({ title: 'Text extraction complete', description: 'The document was processed again with Lumen OCR. Review the extracted details.' });
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -149,16 +156,10 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
             <div
               role="status"
               className={`flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm ${
-                feedback.type === 'success'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700'
-                  : 'border-destructive/40 bg-destructive/10 text-destructive'
+                'border-destructive/40 bg-destructive/10 text-destructive'
               }`}
             >
-              {feedback.type === 'success' ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              )}
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{feedback.text}</span>
             </div>
           )}
@@ -180,6 +181,12 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
           </div>
         </form>
       </CardContent>
+      <ActionCompleteDialog
+        open={Boolean(completion)}
+        title={completion?.title}
+        description={completion?.description}
+        onClose={() => setCompletion(null)}
+      />
     </Card>
   );
 }
