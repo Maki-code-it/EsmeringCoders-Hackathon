@@ -1,8 +1,8 @@
-# SahodSuri
+# Eearnest
 
 **Understand Your Pay. Know Your Rights.**
 
-SahodSuri helps Filipino employees understand their payslips, contracts, deductions, and workplace rights. It uses Lumen OCR to read documents, deterministic code to break down pay, and Lumen AI Chat to answer labor-rights questions in English or Filipino.
+Earnest helps Filipino employees understand their payslips, contracts, deductions, and workplace rights. It uses Lumen OCR to read documents, deterministic code to break down pay, and Lumen AI Chat to answer labor-rights questions in English or Filipino.
 
 **SDGs:** 8 (primary), 10, 4, 16.
 
