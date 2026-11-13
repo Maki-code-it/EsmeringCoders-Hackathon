@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, Info, MinusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { cn } from '@/components/utils.js';
 import { formatMoney, formatPercent } from '../lib/payslipForm.js';
+import { explainBreakdown } from '../lib/breakdownExplanations.js';
 
 /** Small label that says where a number came from. */
 function SourceTag({ kind }) {
@@ -182,6 +183,54 @@ function HowCalculated({ breakdown }) {
   );
 }
 
+function ExplanationGroup({ title, items }) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+      <dl className="space-y-2">
+        {items.map((item, index) => (
+          <div key={`${item.label}-${index}`} className="rounded-2xl bg-muted p-3.5">
+            <dt className="flex flex-wrap items-baseline justify-between gap-x-3 font-medium">
+              <span>{item.label}</span>
+              <span className="tabular-nums">
+                {item.amount}
+                {item.share && <span className="text-xs font-normal text-muted-foreground">{item.share}</span>}
+              </span>
+            </dt>
+            <dd className="mt-0.5 text-xs text-muted-foreground">{item.meaning}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+// Plain-language summary of the whole payslip, then what each line means.
+function BreakdownExplanation({ breakdown }) {
+  const explained = explainBreakdown(breakdown);
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between gap-2">
+        <CardTitle>What your breakdown means</CardTitle>
+        <SourceTag kind="calculated" />
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <p className="rounded-2xl border border-primary/30 bg-primary/5 p-3.5">{explained.summary}</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ExplanationGroup title="Earnings (added to your pay)" items={explained.earnings} />
+          <ExplanationGroup title="Deductions (taken from your pay)" items={explained.deductions} />
+        </div>
+        <ExplanationGroup title="Totals" items={explained.totals} />
+        <p className="text-xs text-muted-foreground">
+          These are general descriptions of each item. Current contribution and tax rates change, so check them with
+          SSS, PhilHealth, Pag-IBIG or the BIR.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Full breakdown for one payslip, from the backend calculator's result. */
 export default function BreakdownView({ breakdown }) {
   const { totals } = breakdown;
@@ -193,6 +242,8 @@ export default function BreakdownView({ breakdown }) {
         <StatCard label="Total deductions" value={formatMoney(totals.totalDeductions)} sub={`${formatPercent(totals.deductionPercent)} of gross pay`} />
         <StatCard label="Net pay (take-home)" value={formatMoney(totals.computedNetPay)} sub={`You keep ${formatPercent(totals.takeHomePercent)} of gross pay`} emphasis />
       </div>
+
+      <BreakdownExplanation breakdown={breakdown} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <LinesTable title="Earnings" lines={breakdown.earnings} total={totals.grossPay} barClass="bg-primary" />
