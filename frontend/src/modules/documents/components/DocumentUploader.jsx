@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { FileUp, FileText, AlertCircle, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
+import ActionCompleteDialog from '@/components/ActionCompleteDialog.jsx';
 import { validateSelectedFile } from '../lib/documentValidation.js';
 
 export default function DocumentUploader({ onUploadComplete }) {
@@ -11,9 +12,11 @@ export default function DocumentUploader({ onUploadComplete }) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleFilePick = (file) => {
     setError('');
+    setSuccess(false);
     const validationError = validateSelectedFile(file);
     if (validationError) {
       setSelectedFile(null);
@@ -28,6 +31,7 @@ export default function DocumentUploader({ onUploadComplete }) {
     event.stopPropagation();
     setSelectedFile(null);
     setError('');
+    setSuccess(false);
     if (inputRef.current) inputRef.current.value = '';
   };
 
@@ -48,8 +52,10 @@ export default function DocumentUploader({ onUploadComplete }) {
 
     setUploading(true);
     setError('');
+    setSuccess(false);
     try {
       await onUploadComplete(selectedFile, documentType);
+      setSuccess(true);
       setSelectedFile(null);
       if (inputRef.current) inputRef.current.value = '';
     } catch (err) {
@@ -164,6 +170,12 @@ export default function DocumentUploader({ onUploadComplete }) {
           </div>
         </form>
       </CardContent>
+      <ActionCompleteDialog
+        open={success}
+        title="Upload and extraction complete"
+        description="Your document was uploaded and text was extracted successfully. Review the extracted details below."
+        onClose={() => setSuccess(false)}
+      />
     </Card>
   );
 }
