@@ -1,10 +1,10 @@
-# SahodSuri
+# Earnest
 
 **Understand Your Pay. Know Your Rights.**
 
 ## Project Overview
 
-SahodSuri is an AI-powered document intelligence platform that helps Filipino employees understand their payslips, employment contracts, salary deductions, compensation, and workplace rights. Using Lumen OCR and Lumen AI Chat, it turns complicated employment documents into understandable explanations, transparent payroll breakdowns, and accessible information about Philippine labor rights.
+Earnest is an AI-powered document intelligence platform that helps Filipino employees understand their payslips, employment contracts, salary deductions, compensation, and workplace rights. Using Lumen OCR and Lumen AI Chat, it turns complicated employment documents into understandable explanations, transparent payroll breakdowns, and accessible information about Philippine labor rights.
 
 **SDGs:** Primary SDG 8 (Decent Work and Economic Growth). Secondary SDG 10, SDG 4, and SDG 16.
 
