@@ -3,11 +3,12 @@ import { AppError } from '../../middleware/apiResponse.js';
 
 /**
  * Read-only data access for the dashboard. The service-role client bypasses
- * RLS, so EVERY query here filters by user_id (directly, or through the parent
- * payroll record). The dashboard never writes to other modules' tables.
+ * RLS, so queries are scoped to a user id whenever one is known (see
+ * userContext.js). With no user id (local development without sign-in) the
+ * queries are unscoped. The dashboard never writes to other modules' tables.
  *
  * Tables used (see database/schema.sql): payroll_records, payroll_items,
- * documents, contract_reviews.
+ * documents.
  */
 
 const MAX_ROWS = 500;
@@ -22,14 +23,17 @@ const rowsOf = ({ data, error }) => {
   return data || [];
 };
 
+/** Restrict a query to one user's rows; a null user id means "no restriction". */
+const forUser = (query, userId) => (userId ? query.eq('user_id', userId) : query);
+
 export const createRepository = (getClient = getSupabaseAdminClient) => ({
   async listPayrollRecords(userId) {
-    const result = await getClient()
+    const query = getClient()
       .from('payroll_records')
       .select(
         'id, document_id, employer_name, pay_period_start, pay_period_end, payment_date, basic_salary, total_allowances, total_deductions, gross_pay, net_pay, currency, analysis_status, created_at',
-      )
-      .eq('user_id', userId)
+      );
+    const result = await forUser(query, userId)
       .order('created_at', { ascending: true })
       .limit(MAX_ROWS);
     return rowsOf(result);
@@ -39,13 +43,8 @@ export const createRepository = (getClient = getSupabaseAdminClient) => ({
   async listDeductions(userId, recordIds) {
     if (!recordIds.length) return [];
     // Ownership: only items whose parent record belongs to this user.
-    const owned = rowsOf(
-      await getClient()
-        .from('payroll_records')
-        .select('id')
-        .eq('user_id', userId)
-        .in('id', recordIds),
-    ).map((r) => r.id);
+    const ownedQuery = getClient().from('payroll_records').select('id');
+    const owned = rowsOf(await forUser(ownedQuery, userId).in('id', recordIds)).map((r) => r.id);
     if (!owned.length) return [];
 
     const result = await getClient()
@@ -58,20 +57,10 @@ export const createRepository = (getClient = getSupabaseAdminClient) => ({
   },
 
   async listDocuments(userId) {
-    const result = await getClient()
+    const query = getClient()
       .from('documents')
-      .select('id, document_type, file_name, status, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(MAX_ROWS);
-    return rowsOf(result);
-  },
-
-  async listContractReviews(userId) {
-    const result = await getClient()
-      .from('contract_reviews')
-      .select('id, document_id, review_status, created_at')
-      .eq('user_id', userId)
+      .select('id, document_type, file_name, status, created_at');
+    const result = await forUser(query, userId)
       .order('created_at', { ascending: false })
       .limit(MAX_ROWS);
     return rowsOf(result);

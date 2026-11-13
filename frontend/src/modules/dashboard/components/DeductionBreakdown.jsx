@@ -5,8 +5,8 @@ export default function DeductionBreakdown({ items, currency }) {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Deductions by type</CardTitle>
-        <p className="text-sm text-muted-foreground">Totals across the selected pay periods.</p>
+        <CardTitle>Where your deductions go</CardTitle>
+        <p className="text-sm text-muted-foreground">Money taken out of your pay, by type.</p>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (

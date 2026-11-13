@@ -91,9 +91,6 @@ const fakeRepo = {
   listDocuments: async () => [
     { id: 'd1', document_type: 'payslip', file_name: 'jan.pdf', status: 'completed', created_at: '2026-01-02T00:00:00Z' },
   ],
-  listContractReviews: async () => [
-    { id: 'cr1', document_id: 'd1', review_status: 'completed', created_at: '2026-01-03T00:00:00Z' },
-  ],
   listDeductions: async () => [{ payroll_record_id: 'a', category: 'government', description: 'SSS', amount: 100 }],
 };
 
@@ -101,17 +98,17 @@ test('service builds summary, history and report', async () => {
   const svc = createService(fakeRepo);
   const summary = await svc.getSummary('u1');
   assert.equal(summary.documents.byType.payslip, 1);
-  assert.equal(summary.analysesCount, 4); // 3 analyzed payroll records + 1 contract review
+  assert.equal(summary.analysesCount, 3); // analyzed payroll records
 
   const history = await svc.getHistory('u1', { limit: 2, offset: 0 });
-  assert.equal(history.total, 6); // 1 document + 4 payroll + 1 review
+  assert.equal(history.total, 5); // 1 document + 4 payroll
   assert.equal(history.items.length, 2);
   assert.equal(history.items[0].kind, 'payroll'); // newest first
-  const reviewsOnly = await svc.getHistory('u1', { limit: 10, offset: 0, type: 'contract_review' });
-  assert.equal(reviewsOnly.items[0].filename, 'jan.pdf');
+  const noReviews = await svc.getHistory('u1', { limit: 10, offset: 0, type: 'contract_review' });
+  assert.equal(noReviews.total, 0); // reviews no longer appear in history
 
   const report = await svc.getPayrollReport('u1', {}, new Date('2026-04-01T00:00:00Z'));
-  assert.equal(report.filename, 'sahodsuri-payroll-report-2026-04-01.csv');
+  assert.equal(report.filename, 'earnest-payroll-report-2026-04-01.csv');
   assert.match(report.csv, /^Pay period start,/);
   assert.equal(report.source, 'calculated');
 });
@@ -142,18 +139,56 @@ test('repository scopes every query by user_id and hides DB errors', async () =>
   await assert.rejects(() => broken.listPayrollRecords('u1'), (e) => e.code === 'DASHBOARD_DATA_ERROR' && !/secret/.test(e.message));
 });
 
-test('user guard needs req.user.id and ignores ids from the query', () => {
+test('user guard: scopes to req.user, ignores query ids, refuses anonymous in production', () => {
   const run = (req) => {
     let err;
     requireAuthenticatedUser(req, {}, (e) => { err = e; });
     return { req, err };
   };
-  assert.equal(run({ query: { userId: 'evil' } }).err.statusCode, 401);
   const ok = run({ user: { id: 'u9' }, query: { userId: 'evil' } });
   assert.equal(ok.err, undefined);
   assert.equal(ok.req.dashboardUserId, 'u9');
+
+  const prev = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = 'production';
+    assert.equal(run({ query: {} }).err.statusCode, 401);
+    process.env.NODE_ENV = 'development';
+    const dev = run({ query: { userId: 'evil' } });
+    assert.equal(dev.err, undefined);
+    const prevDev = process.env.DEV_USER_ID;
+    delete process.env.DEV_USER_ID;
+    assert.equal(run({ query: {} }).req.dashboardUserId, null);
+    process.env.DEV_USER_ID = 'dev-user';
+    assert.equal(run({ query: { userId: 'evil' } }).req.dashboardUserId, 'dev-user');
+    if (prevDev === undefined) delete process.env.DEV_USER_ID;
+    else process.env.DEV_USER_ID = prevDev;
+  } finally {
+    process.env.NODE_ENV = prev;
+  }
 });
-test('router rejects unauthenticated requests with the shared error format', async () => {
+
+test('repository leaves queries unscoped only when there is no user id', async () => {
+  const calls = [];
+  const chain = () => {
+    const q = {
+      select: () => q,
+      eq: (col, val) => (calls.push([col, val]), q),
+      in: () => q,
+      order: () => q,
+      limit: () => Promise.resolve({ data: [], error: null }),
+    };
+    return q;
+  };
+  const repo = createRepository(() => ({ from: chain }));
+  await repo.listDocuments(null);
+  assert.equal(calls.length, 0);
+  await repo.listDocuments('u1');
+  assert.deepEqual(calls, [['user_id', 'u1']]);
+});
+test('router rejects unauthenticated requests in production with the shared error format', async () => {
+  const prevEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
   const { default: router } = await import('../routes.js');
   const app = express();
   app.use('/api/dashboard', router);
@@ -169,6 +204,7 @@ test('router rejects unauthenticated requests with the shared error format', asy
     assert.equal(body.success, false);
     assert.equal(body.error.code, 'UNAUTHENTICATED');
   } finally {
+    process.env.NODE_ENV = prevEnv;
     server.close();
   }
 });

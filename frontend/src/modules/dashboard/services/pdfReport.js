@@ -69,7 +69,7 @@ export function buildPdf(report, JsPDF) {
   doc.rect(0, 0, PAGE.w, 96, 'F');
   ink([255, 255, 255]);
   font(22, true);
-  doc.text('SahodSuri', PAGE.m, 44);
+  doc.text('Earnest', PAGE.m, 44);
   font(11);
   doc.text('Payroll Report', PAGE.m, 62);
   font(9);

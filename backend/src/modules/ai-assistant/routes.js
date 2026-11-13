@@ -5,6 +5,7 @@ import { validateRequest } from '../../middleware/validateRequest.js';
 import { makeSystemPrompt } from './prompts.js';
 import { findRelevantReferences, formatReferencesForPrompt, toReferenceLinks } from './referenceLibrary.js';
 import { makeReferenceFallback } from './referenceAnswers.js';
+import { faqReferenceLinks, findFaq, formatFaqForPrompt } from './faqLibrary.js';
 
 const router = Router();
 const MAX_HISTORY = 10;
@@ -57,6 +58,42 @@ const requestLumen = async (url, options = {}, stage = 'request') => {
   return data;
 };
 
+const FAQ_NOTICES = {
+  declined: {
+    English: 'Lumen could not answer this one, so this answer comes from Earnest’s reviewed FAQ.',
+    Filipino: 'Hindi ito nasagot ng Lumen, kaya ang sagot na ito ay mula sa sinuring FAQ ng Earnest.',
+    Taglish: 'Hindi ito nasagot ng Lumen, kaya galing ang sagot na ito sa reviewed FAQ ng Earnest.',
+  },
+  unavailable: {
+    English: 'Lumen AI is unavailable right now, so this answer comes from Earnest’s reviewed FAQ.',
+    Filipino: 'Hindi available ang Lumen AI ngayon, kaya ang sagot na ito ay mula sa sinuring FAQ ng Earnest.',
+    Taglish: 'Hindi available ang Lumen AI ngayon, kaya galing ang sagot na ito sa reviewed FAQ ng Earnest.',
+  },
+};
+
+const STANDARD_CAUTIONS = [
+  'AI-generated or reference-based information may be incomplete. Verify important payroll details with your records and current official guidance.',
+  'This is general information, not legal advice. A deduction or employment term cannot be judged from this chat alone.',
+];
+
+// Phrases Lumen uses when it refuses or cannot answer a question.
+const DECLINED_ANSWER = /outside what this assistant covers|outside.*covers|\bi(?:'|’)?m (?:sorry|unable)[^.]{0,60}\b(?:help|assist|answer)|\bi (?:can(?:no|'|’)t|am unable to|am not able to) (?:help|assist|answer|provide)/i;
+
+/** Answer from the reviewed FAQ library (used when Lumen declines or is unavailable). */
+const sendFaqAnswer = (res, { faq, language, reason, sessionId }) =>
+  sendSuccess(res, {
+    answer: faq.answer[language] || faq.answer.English,
+    sessionId: sessionId || null,
+    source: 'faq',
+    cautions: [FAQ_NOTICES[reason][language] || FAQ_NOTICES[reason].English, ...STANDARD_CAUTIONS],
+    references: faqReferenceLinks(faq),
+  }, 'Assistant response generated');
+
+// Lumen failures (not user input errors) can fall back to the FAQ.
+const isLumenFailure = (error) =>
+  error?.code !== 'QUESTION_TOO_LONG'
+  && (error?.statusCode >= 500 || /^(LUMEN_|AI_)/.test(String(error?.code || '')) || error?.name === 'TimeoutError' || error?.name === 'AbortError');
+
 const validateChat = (req) => {
   const errors = {};
   const { question, language = 'English', history = [], topic = 'labor' } = req.body || {};
@@ -72,12 +109,16 @@ const validateChat = (req) => {
 };
 
 router.post('/chat', validateRequest(validateChat), async (req, res, next) => {
+  const { question, language = 'English', topic = 'labor', sessionId: requestedSessionId } = req.body;
+  // Reviewed FAQ entry for basic questions (gross pay, 13th month, holiday pay...).
+  const faq = findFaq(question);
+  let sessionId = requestedSessionId;
+
   try {
     if (!chatOrigin || !env.lumen.apiKey || !env.lumen.apiSecret) {
       throw new AppError('AI chat is not configured yet. Set the Lumen gateway origin and credentials in the backend environment.', 503, 'AI_NOT_CONFIGURED');
     }
 
-    const { question, language = 'English', history = [], topic = 'labor', sessionId: requestedSessionId } = req.body;
     let origin;
     try {
       origin = new URL(chatOrigin);
@@ -99,11 +140,10 @@ router.post('/chat', validateRequest(validateChat), async (req, res, next) => {
     }
 
     const instanceId = String(selectedInstance.InstanceID);
-    let sessionId = requestedSessionId;
     if (!sessionId) {
       const opened = await requestLumen(new URL(`instances/${encodeURIComponent(instanceId)}/sessions`, base), {
         method: 'POST',
-        body: JSON.stringify({ title: 'SahodSuri AI Assistant' }),
+        body: JSON.stringify({ title: 'Earnest AI Assistant' }),
       }, 'session creation');
       sessionId = opened?.Session?.id;
       if (!sessionId) throw new AppError('Lumen could not open a chat session. Please try again.', 502, 'AI_INVALID_RESPONSE');
@@ -111,10 +151,16 @@ router.post('/chat', validateRequest(validateChat), async (req, res, next) => {
 
     const references = findRelevantReferences({ question, topic, limit: 2 });
     let includedReferences = [...references];
-    const makeContextualQuestion = () => `${makeSystemPrompt(language, topic)}\n\n${includedReferences.length ? `Reference context (paraphrased; verify details at source):\n${formatReferencesForPrompt(includedReferences)}` : ''}\n\nUser question: ${question.trim()}`;
+    let includedFaq = faq;
+    const makeContextualQuestion = () => `${makeSystemPrompt(language, topic)}\n\n${includedFaq ? `${formatFaqForPrompt(includedFaq)}\n\n` : ''}${includedReferences.length ? `Reference context (paraphrased; verify details at source):\n${formatReferencesForPrompt(includedReferences)}` : ''}\n\nUser question: ${question.trim()}`;
     let contextualQuestion = makeContextualQuestion();
+    // Trim context to fit Lumen's message limit: general references first, the FAQ facts last.
     while (contextualQuestion.length > MAX_LUMEN_MESSAGE_LENGTH && includedReferences.length) {
       includedReferences.pop();
+      contextualQuestion = makeContextualQuestion();
+    }
+    if (contextualQuestion.length > MAX_LUMEN_MESSAGE_LENGTH && includedFaq) {
+      includedFaq = null;
       contextualQuestion = makeContextualQuestion();
     }
     if (contextualQuestion.length > MAX_LUMEN_MESSAGE_LENGTH) {
@@ -127,27 +173,36 @@ router.post('/chat', validateRequest(validateChat), async (req, res, next) => {
     let answer = result?.Answer?.answer;
     if (!answer?.trim()) throw new AppError('Lumen returned an unreadable answer. Please try again.', 502, 'AI_INVALID_RESPONSE');
 
-    const fallback = /outside what this assistant covers|outside.*covers/i.test(answer)
+    const declined = DECLINED_ANSWER.test(answer);
+    if (declined && faq) return sendFaqAnswer(res, { faq, language, reason: 'declined', sessionId });
+
+    const fallback = declined
       ? makeReferenceFallback({ question, language, references: includedReferences })
       : null;
     if (fallback) answer = fallback.answer;
 
+    // Unique source links: FAQ sources first, then library references, then Lumen citations.
+    const seen = new Set();
+    const sourceLinks = [
+      ...(includedFaq ? faqReferenceLinks(includedFaq) : []),
+      ...toReferenceLinks(includedReferences),
+      ...(Array.isArray(result?.Answer?.citations)
+        ? result.Answer.citations.filter((item) => typeof item === 'string').slice(0, 5).map((url) => ({ title: 'Lumen citation', url }))
+        : []),
+    ].filter(({ url }) => (seen.has(url) ? false : seen.add(url)));
+
     return sendSuccess(res, {
       answer: answer.trim(),
       sessionId,
-      cautions: [
-        ...(fallback ? [fallback.notice] : []),
-        'AI-generated or reference-based information may be incomplete. Verify important payroll details with your records and current official guidance.',
-        'This is general information, not legal advice. A deduction or employment term cannot be judged from this chat alone.',
-      ],
-      references: [
-        ...toReferenceLinks(includedReferences),
-        ...(Array.isArray(result?.Answer?.citations)
-          ? result.Answer.citations.filter((item) => typeof item === 'string').slice(0, 5).map((url) => ({ title: 'Lumen citation', url }))
-          : []),
-      ],
+      source: fallback ? 'reference' : 'lumen',
+      cautions: [...(fallback ? [fallback.notice] : []), ...STANDARD_CAUTIONS],
+      references: sourceLinks,
     }, 'Assistant response generated');
   } catch (error) {
+    // Lumen down, slow, or not configured: still answer basic questions from the FAQ.
+    if (faq && isLumenFailure(error)) {
+      return sendFaqAnswer(res, { faq, language, reason: 'unavailable', sessionId });
+    }
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError' || error?.code === 'AI_CHAT_REPLY_TIMEOUT') {
       return next(new AppError('Lumen took too long to answer. Please try again.', 504, 'AI_TIMEOUT'));
     }

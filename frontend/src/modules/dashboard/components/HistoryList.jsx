@@ -1,21 +1,43 @@
-import { History } from 'lucide-react';
+import { useState } from 'react';
+import { Eye, History } from 'lucide-react';
 import EmptyState from '@/components/EmptyState.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
 import { analysisLabel, formatDate } from '../lib/format.js';
 import { HISTORY_PAGE_SIZE } from '../hooks/useDashboardData.js';
+import DocumentViewDialog from '@/modules/documents/components/DocumentViewDialog.jsx';
+import { getDocument } from '@/modules/documents/services/documentService.js';
+import { getRecord } from '@/modules/payroll/services/payrollService.js';
+import PayrollViewDialog from './PayrollViewDialog.jsx';
 
 const FILTERS = [
   { value: '', label: 'All' },
   { value: 'payslip', label: 'Payslips' },
   { value: 'contract', label: 'Contracts' },
   { value: 'payroll', label: 'Payroll' },
-  { value: 'contract_review', label: 'Reviews' },
 ];
 
 export default function HistoryList({ history, type, page, onTypeChange, onPageChange }) {
   const total = history?.total ?? 0;
   const lastPage = Math.max(0, Math.ceil(total / HISTORY_PAGE_SIZE) - 1);
+
+  // View opens the saved values of an uploaded payslip or contract.
+  const [viewing, setViewing] = useState(null);
+  const [viewingPayroll, setViewingPayroll] = useState(null);
+  const [viewingId, setViewingId] = useState(null);
+  const [viewError, setViewError] = useState('');
+  const openItem = async (item) => {
+    setViewError('');
+    setViewingId(item.id);
+    try {
+      if (item.kind === 'payroll') setViewingPayroll(await getRecord(item.id));
+      else setViewing(await getDocument(item.id));
+    } catch (err) {
+      setViewError(err?.message || 'Could not open this document.');
+    } finally {
+      setViewingId(null);
+    }
+  };
 
   return (
     <section aria-labelledby="history-heading">
@@ -36,6 +58,12 @@ export default function HistoryList({ history, type, page, onTypeChange, onPageC
         </div>
       </div>
 
+      {viewError && (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          {viewError}
+        </p>
+      )}
+
       {!history || history.items.length === 0 ? (
         <EmptyState
           icon={History}
@@ -55,9 +83,23 @@ export default function HistoryList({ history, type, page, onTypeChange, onPageC
                       {item.status ? ` · ${item.status.replace(/_/g, ' ')}` : ''}
                     </p>
                   </div>
-                  <time className="text-muted-foreground" dateTime={item.createdAt}>
-                    {formatDate(item.createdAt)}
-                  </time>
+                  <div className="flex items-center gap-3">
+                    <time className="text-muted-foreground" dateTime={item.createdAt}>
+                      {formatDate(item.createdAt)}
+                    </time>
+                    {(item.kind === 'payslip' || item.kind === 'contract' || item.kind === 'payroll') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={viewingId === item.id}
+                        onClick={() => openItem(item)}
+                        aria-label={`View ${item.filename || 'document'}`}
+                      >
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                        {viewingId === item.id ? 'Opening…' : 'View'}
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -77,6 +119,9 @@ export default function HistoryList({ history, type, page, onTypeChange, onPageC
           </CardContent>
         </Card>
       )}
+
+      <DocumentViewDialog document={viewing} onClose={() => setViewing(null)} />
+      <PayrollViewDialog data={viewingPayroll} onClose={() => setViewingPayroll(null)} />
     </section>
   );
 }

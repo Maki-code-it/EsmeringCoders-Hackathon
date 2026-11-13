@@ -21,8 +21,7 @@ export const formatDate = (value) => {
 const ANALYSIS_LABELS = {
   payslip: 'Payslip uploaded',
   contract: 'Contract uploaded',
-  payroll: 'Payroll analysis',
-  contract_review: 'Contract review',
+  payroll: 'Payroll breakdown',
 };
 
 /** Friendly label for a history item kind from the dashboard API. */

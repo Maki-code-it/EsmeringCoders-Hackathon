@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LayoutDashboard, FileUp, Calculator, MessageCircle, Hammer } from 'lucide-react';
+import { LayoutDashboard, FileUp, Calculator, MessageCircle } from 'lucide-react';
 import AppLayout from '@/components/AppLayout.jsx';
 import ApiStatus from '@/components/ApiStatus.jsx';
-import PageHeader from '@/components/PageHeader.jsx';
-import EmptyState from '@/components/EmptyState.jsx';
 import DashboardPage from '@/modules/dashboard/DashboardPage.jsx';
 import AIAssistantPage from '@/modules/ai-assistant/AIAssistantPage.jsx';
+import PayrollPage from '@/modules/payroll/PayrollPage.jsx';
+import DocumentsPage from '@/modules/documents/DocumentsPage.jsx';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { id: 'assistant', label: 'AI Assistant', icon: MessageCircle },
 ];
 
-// Hash-based navigation: no router dependency needed for the MVP.
+// Hash-based navigation: no router dependency needed.
 const readPage = () => {
   const id = window.location.hash.replace('#/', '');
   return NAV_ITEMS.some((item) => item.id === id) ? id : 'dashboard';
@@ -29,11 +29,13 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  const navigate = useCallback((id) => {
+  // The uploaded document a payroll breakdown should be linked to (if any).
+  const [payrollDocumentId, setPayrollDocumentId] = useState(null);
+
+  const navigate = useCallback((id, options = {}) => {
+    setPayrollDocumentId(id === 'payroll' ? options.documentId ?? null : null);
     window.location.hash = `#/${id}`;
   }, []);
-
-  const current = NAV_ITEMS.find((item) => item.id === page);
 
   return (
     <AppLayout
@@ -44,17 +46,12 @@ export default function App() {
     >
       {page === 'dashboard' ? (
         <DashboardPage onNavigate={navigate} />
+      ) : page === 'upload' ? (
+        <DocumentsPage onNavigate={navigate} />
       ) : page === 'assistant' ? (
         <AIAssistantPage />
       ) : (
-        <>
-          <PageHeader title={current.label} />
-          <EmptyState
-            icon={Hammer}
-            title="Not built yet"
-            description="This page is the next step of the MVP and has no functionality yet."
-          />
-        </>
+        <PayrollPage documentId={payrollDocumentId} />
       )}
     </AppLayout>
   );
