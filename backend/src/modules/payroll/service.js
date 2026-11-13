@@ -2,14 +2,7 @@ import { AppError } from '../../middleware/apiResponse.js';
 import { calculateBreakdown } from './calculator.js';
 import { payrollRepository } from './repository.js';
 
-/**
- * Business logic: calculate, save, and load payroll breakdowns.
- *
- * Stored values:
- *   payroll_items     = the lines the user entered or confirmed (source of truth)
- *   payroll_records   = calculated totals, so the dashboard can read them quickly
- *   net_pay           = the payslip's stated net pay when given, else the computed one
- */
+// Business logic: calculate, save, and load payroll breakdowns. payroll_items are the source of truth; payroll_records hold calculated totals for fast dashboard reads.
 
 const toDetails = (record) => ({
   id: record.id,
@@ -99,8 +92,7 @@ export const createService = (repository = payrollRepository) => ({
     const { record, items } = found;
     const toLine = (item) => ({ category: item.category, description: item.description, amount: Number(item.amount) });
 
-    // net_pay holds the payslip's stated net pay, unless none was entered (then
-    // it holds the computed value and the saved flags say NET_PAY_NOT_ENTERED).
+    // net_pay holds the payslip's stated net pay, unless none was entered (then it holds the computed value and the saved flags say NET_PAY_NOT_ENTERED).
     const savedFlags = Array.isArray(record.discrepancy_flags) ? record.discrepancy_flags : [];
     const statedNetEntered = !savedFlags.some((flag) => flag?.code === 'NET_PAY_NOT_ENTERED');
 

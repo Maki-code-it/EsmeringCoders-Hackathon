@@ -1,15 +1,6 @@
 import { env } from '@/config/env.js';
 
-/**
- * Shared HTTP client. ALL modules must use this instead of calling fetch directly.
- *
- * Backend contract:
- *   success: { success: true,  message, data }
- *   error:   { success: false, message, error: { code, details } }
- *
- * On success, request() resolves with the `data` payload.
- * On failure, it throws an ApiError.
- */
+// Shared HTTP client. ALL modules must use this instead of calling fetch directly. Success: { success, message, data }; error adds error: { code, details }. On success, request() resolves with the `data` payload. On failure, it throws an ApiError.
 
 export class ApiError extends Error {
   constructor(message, { status = 0, code = 'UNKNOWN_ERROR', details = null } = {}) {
@@ -31,15 +22,6 @@ const parseJson = async (response) => {
   }
 };
 
-/**
- * @param {string} path  e.g. "/health"
- * @param {object} [options]
- * @param {string} [options.method]
- * @param {object} [options.body]      JSON body (sent as application/json)
- * @param {FormData} [options.formData] multipart/form-data body (browser sets boundary)
- * @param {object} [options.headers]   extra headers (e.g. Authorization)
- * @param {AbortSignal} [options.signal]
- */
 export async function request(path, { method = 'GET', body, formData, headers = {}, signal } = {}) {
   const finalHeaders = { Accept: 'application/json', ...headers };
   let payload;

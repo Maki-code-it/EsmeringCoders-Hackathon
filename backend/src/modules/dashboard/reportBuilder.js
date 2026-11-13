@@ -1,6 +1,4 @@
-/**
- * Builds downloadable payroll report content. Pure functions only.
- */
+// Builds downloadable payroll report content. Pure functions only.
 
 // Cells starting with these characters can run as formulas in spreadsheets.
 const FORMULA_PREFIX = /^[=+\-@\t\r]/;

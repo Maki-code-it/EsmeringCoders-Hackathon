@@ -14,11 +14,7 @@ import {
   createShortLivedDownloadUrl,
 } from './repository.js';
 
-/**
- * Step 1 of upload: generates a deterministic private Storage path
- * (<user_id>/<document_id>/<sanitized_filename>) and signed upload URL
- * so files bypass Express's 1 MB JSON body limit safely.
- */
+// Step 1 of upload: generates a deterministic private Storage path (<user_id>/<document_id>/<sanitized_filename>) and signed upload URL so files bypass Express's 1 MB JSON body limit safely.
 export const initiateDocumentUpload = async (userId, { document_type, file_name, file_type, file_size }) => {
   const documentId = crypto.randomUUID();
   const cleanName = sanitizeFileName(file_name);
@@ -54,10 +50,7 @@ export const initiateDocumentUpload = async (userId, { document_type, file_name,
   };
 };
 
-/**
- * Step 2 of upload (or re-run): downloads the private file from Storage,
- * runs Lumen OCR extraction on the backend, and persists extracted text & fields.
- */
+// Step 2 of upload (or re-run): downloads the private file from Storage, runs Lumen OCR extraction on the backend, and persists extracted text & fields.
 export const processDocumentOcr = async (userId, documentId) => {
   const existing = await getUserDocumentById(userId, documentId);
 
@@ -106,9 +99,7 @@ export const getDocumentDetail = async (userId, documentId) => {
   return { ...document, preview_url: previewUrl };
 };
 
-/**
- * Saves user corrections to extracted fields or raw extracted text.
- */
+// Saves user corrections to extracted fields or raw extracted text.
 export const saveDocumentCorrections = async (
   userId,
   documentId,

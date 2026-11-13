@@ -1,10 +1,6 @@
 import { api } from '@/services/apiClient.js';
 
-/**
- * Dashboard API calls. All HTTP goes through the shared api client. This module
- * has no sign-in logic: attaching the user's credentials to requests is the
- * auth owner's job (in the shared client), and the backend decides who the user is.
- */
+// Dashboard API calls. All HTTP goes through the shared api client.
 
 const withQuery = (path, params = {}) => {
   const qs = new URLSearchParams(

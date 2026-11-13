@@ -1,8 +1,4 @@
-/**
- * Pure analytics helpers for the dashboard. No I/O, no Express, no Supabase,
- * so they are deterministic and easy to test. All figures are CALCULATED from
- * the user's stored payroll records (never AI-generated).
- */
+// Pure analytics helpers for the dashboard. No I/O, no Express, no Supabase, so they are deterministic and easy to test.
 
 export const round2 = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
 
@@ -33,10 +29,7 @@ export const filterByRange = (records, { from, to } = {}) =>
     return true;
   });
 
-/**
- * Records still 'pending' hold the column defaults (0), not real figures, so
- * they must not drag averages down or appear in trends.
- */
+// Records still 'pending' hold the column defaults (0), not real figures, so they must not drag averages down or appear in trends.
 export const isAnalyzed = (record) => record.analysis_status !== 'pending';
 
 /** Normalise a payroll_records row into numbers + a timeline date. */
@@ -56,10 +49,7 @@ export const normalizeRecord = (record) => ({
   currency: record.currency || 'PHP',
 });
 
-/**
- * Salary trend points, oldest first, with change versus the previous point that
- * has a net pay.
- */
+// Salary trend points, oldest first, with change versus the previous point that has a net pay.
 export const buildSalaryTrend = (records) => {
   const points = records
     .map(normalizeRecord)
@@ -83,10 +73,7 @@ export const buildSalaryTrend = (records) => {
 export const deductionRate = ({ grossPay, totalDeductions }) =>
   grossPay && totalDeductions !== null ? round2((totalDeductions / grossPay) * 100) : null;
 
-/**
- * Group deduction lines by name (case-insensitive) with totals and share.
- * Input rows are payroll_items of type 'deduction': { description, category, amount }.
- */
+// Group deduction lines by name (case-insensitive) with totals and share. Input rows are payroll_items of type 'deduction': { description, category, amount }.
 export const buildDeductionBreakdown = (deductions) => {
   const groups = new Map();
   for (const row of deductions) {

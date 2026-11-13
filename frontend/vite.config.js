@@ -22,8 +22,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
-      // Optional: set VITE_API_BASE_URL=/api to route requests through this proxy
-      // instead of calling the backend directly (avoids CORS in development).
+      // Optional: set VITE_API_BASE_URL=/api to use this proxy and avoid CORS in development.
       proxy: {
         '/api': {
           target: `http://localhost:${backendPort}`,

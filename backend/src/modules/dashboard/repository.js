@@ -1,15 +1,7 @@
 import { getSupabaseAdminClient } from '../../config/supabase.js';
 import { AppError } from '../../middleware/apiResponse.js';
 
-/**
- * Read-only data access for the dashboard. The service-role client bypasses
- * RLS, so queries are scoped to a user id whenever one is known (see
- * userContext.js). With no user id (local development without sign-in) the
- * queries are unscoped. The dashboard never writes to other modules' tables.
- *
- * Tables used (see database/schema.sql): payroll_records, payroll_items,
- * documents.
- */
+// Read-only data access for the dashboard. The service-role client bypasses RLS, so queries are scoped to a user id whenever one is known (see middleware/userContext.js).
 
 const MAX_ROWS = 500;
 

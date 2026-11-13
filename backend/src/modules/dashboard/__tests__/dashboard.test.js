@@ -10,7 +10,7 @@ import {
 } from '../analytics.js';
 import { escapeCsvCell, toCsv } from '../reportBuilder.js';
 import { createService } from '../service.js';
-import { requireAuthenticatedUser } from '../userContext.js';
+import { requireDashboardUser as requireAuthenticatedUser } from '../../../middleware/userContext.js';
 import { validateHistoryQuery, validateRangeQuery } from '../validators.js';
 import { createRepository } from '../repository.js';
 import { errorHandler } from '../../../middleware/errorHandler.js';

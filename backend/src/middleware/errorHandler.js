@@ -4,11 +4,7 @@ import { AppError, sendError } from './apiResponse.js';
 export const notFoundHandler = (req, res) =>
   sendError(res, 404, 'Resource not found', 'NOT_FOUND');
 
-/**
- * Centralized error handler. Must be registered last.
- * Never exposes stack traces or internal error messages to clients, and never
- * logs request bodies (they may contain payslip or contract data).
- */
+// Centralized error handler. Must be registered last. Never exposes stack traces or internal error messages to clients, and never logs request bodies (they may contain payslip or contract data).
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
   if (err instanceof AppError) {

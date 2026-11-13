@@ -1,8 +1,4 @@
-/**
- * Small, reviewed starter library for retrieval-augmented answers.
- * Summaries are paraphrased from the listed official sources; check those
- * sources for current coverage, exceptions, and regional rules.
- */
+// Small, reviewed starter library for retrieval-augmented answers. Summaries are paraphrased from the listed official sources; check those sources for current coverage, exceptions, and regional rules.
 const REFERENCES = [
   {
     id: 'payslip-basics',

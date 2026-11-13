@@ -1,16 +1,4 @@
-/**
- * SahodSuri FAQ library: basic, well-established answers to common questions
- * Filipino workers ask about their sahod (pay) and rights.
- *
- * How it is used (see routes.js):
- *   1. `facts` is added to the Lumen prompt so Lumen answers from reviewed facts.
- *   2. `answer` is shown directly if Lumen declines, errors, or is unavailable.
- *
- * Figures here are general rules for covered private-sector employees, taken
- * from the listed official sources. Exceptions and newer issuances can apply,
- * so every answer tells the user what to verify. Rates that change often
- * (minimum wage, SSS/PhilHealth/Pag-IBIG tables) are deliberately NOT stated.
- */
+// SahodSuri FAQ library: basic, well-established answers to common questions Filipino workers ask about their sahod (pay) and rights.
 
 const SOURCES = {
   handbook: {
@@ -266,11 +254,7 @@ const FAQS = [
   },
 ];
 
-/**
- * Find the FAQ that best matches a question, or null.
- * Score = number of an FAQ's patterns that match. Ties keep library order,
- * which lists more specific FAQs (e.g. gross vs net) before broader ones.
- */
+// Find the FAQ that best matches a question, or null. Score = number of an FAQ's patterns that match. Ties keep library order, which lists more specific FAQs (e.g. gross vs net) before broader ones.
 export function findFaq(question) {
   const text = String(question || '');
   let best = null;

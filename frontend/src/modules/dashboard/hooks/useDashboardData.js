@@ -8,10 +8,7 @@ import {
 
 export const HISTORY_PAGE_SIZE = 10;
 
-/**
- * Loads everything the dashboard shows. Requests are aborted on unmount or when
- * the filters change, so a slow earlier response can never overwrite a newer one.
- */
+// Loads everything the dashboard shows. Requests are aborted on unmount or when the filters change, so a slow earlier response can never overwrite a newer one.
 export default function useDashboardData({ range, historyType, historyPage }) {
   const [state, setState] = useState({ status: 'loading', error: null });
   const [data, setData] = useState({ summary: null, trends: null, analytics: null });

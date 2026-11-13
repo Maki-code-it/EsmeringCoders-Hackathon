@@ -4,19 +4,11 @@ import { AppError } from '../middleware/apiResponse.js';
 
 let adminClient = null;
 
-/**
- * Whether the backend has the minimum Supabase configuration.
- */
+// Whether the backend has the minimum Supabase configuration.
 export const isSupabaseConfigured = () =>
   Boolean(env.supabase.url && env.supabase.serviceRoleKey);
 
-/**
- * Returns a lazily created, reusable Supabase client that uses the service-role
- * key. It bypasses Row Level Security, so use it only in backend code and always
- * enforce ownership checks (user_id) yourself.
- *
- * Nothing connects at startup; the client is only created when first requested.
- */
+// Returns a lazily created, reusable Supabase client that uses the service-role key.
 export const getSupabaseAdminClient = () => {
   if (!isSupabaseConfigured()) {
     throw new AppError(

@@ -1,10 +1,6 @@
 import { buildChartGeometry, formatDate } from '../lib/format.js';
 
-/**
- * Builds the payroll PDF with jsPDF's built-in fonts. Those fonts have no peso
- * sign or typographic dashes, so amounts print as "PHP 1,234.50" and missing
- * values as "-". Pure of browser APIs: it returns the document, the caller saves it.
- */
+// Builds the payroll PDF with jsPDF's built-in fonts. Those fonts have no peso sign or typographic dashes, so amounts print as "PHP 1,234.50" and missing values as "-".
 
 const PAGE = { w: 595.28, h: 841.89, m: 40 };
 const CONTENT_W = PAGE.w - PAGE.m * 2;
@@ -31,7 +27,8 @@ const rangeText = (range) =>
     ? `${range.from ? formatDate(range.from) : 'Start'} to ${range.to ? formatDate(range.to) : 'Today'}`
     : 'All dates';
 
-export function buildPdf(report, JsPDF) {
+// logo: optional PNG data URL drawn on the right of the header band.
+export function buildPdf(report, JsPDF, { logo } = {}) {
   const doc = new JsPDF({ unit: 'pt', format: 'a4' });
   const s = report.summary;
   const cur = s.currency || 'PHP';
@@ -74,6 +71,13 @@ export function buildPdf(report, JsPDF) {
   doc.text('Payroll Report', PAGE.m, 62);
   font(9);
   doc.text(`Generated ${formatDate(report.generatedAt)}   |   Period: ${rangeText(report.range)}`, PAGE.m, 80);
+  if (logo) {
+    const size = 64;
+    const x = PAGE.w - PAGE.m - size;
+    fill([255, 255, 255]);
+    doc.roundedRect(x - 3, 13, size + 6, size + 6, 10, 10, 'F');
+    doc.addImage(logo, 'PNG', x, 16, size, size);
+  }
   y = 124;
 
   // ---- Summary cards ----

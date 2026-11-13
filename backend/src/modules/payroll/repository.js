@@ -1,11 +1,7 @@
 import { getSupabaseAdminClient } from '../../config/supabase.js';
 import { AppError } from '../../middleware/apiResponse.js';
 
-/**
- * Data access for payroll_records and payroll_items (see database/schema.sql).
- * The service-role client bypasses RLS, so EVERY query is filtered by user_id,
- * either directly or by first confirming the parent record belongs to the user.
- */
+// Data access for payroll_records and payroll_items (see database/schema.sql).
 
 const MAX_RECORDS = 100;
 
@@ -36,10 +32,7 @@ export const createRepository = (getClient = getSupabaseAdminClient) => ({
     );
   },
 
-  /**
-   * Finds an existing record that is the same payslip: linked to the same
-   * document, or same employer and same pay period.
-   */
+  // Finds an existing record that is the same payslip: linked to the same document, or same employer and same pay period.
   async findDuplicate(userId, { documentId, employerName, payPeriodStart, payPeriodEnd }) {
     if (documentId) {
       const byDocument = check(

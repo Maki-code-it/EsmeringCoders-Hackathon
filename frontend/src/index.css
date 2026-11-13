@@ -324,15 +324,13 @@
 
   /* App mark in the sidebar and top bar */
   .brand-mark {
-    display: grid;
+    display: block;
     flex-shrink: 0;
-    place-items: center;
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 0.9rem;
-    color: oklch(0.99 0.01 150);
-    font-weight: 700;
-    background: linear-gradient(145deg, oklch(0.7 0.15 150), oklch(0.45 0.12 160));
+    object-fit: cover;
+    background: oklch(1 0 0);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 0.5),
       0 6px 16px -6px oklch(0.45 0.13 155 / 0.7);
