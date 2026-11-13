@@ -15,11 +15,7 @@ const errorLines = (error, form) => {
   return [error?.message || 'Something went wrong. Please try again.'];
 };
 
-/**
- * Payroll Breakdown page.
- *   New:   enter payslip lines -> Calculate (backend, nothing saved) -> Save
- *   Saved: pick a record on the right to view its breakdown, or delete it
- */
+// Payroll Breakdown page: enter payslip lines, calculate (nothing saved), save, or view/delete saved records.
 export default function PayrollPage({ documentId = null }) {
   const [form, setForm] = useState(emptyForm);
   const [preview, setPreview] = useState(null);

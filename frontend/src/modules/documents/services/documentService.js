@@ -1,10 +1,7 @@
 import { api } from '@/services/apiClient.js';
 import { getSupabaseClient } from '@/config/supabase.js';
 
-/**
- * Uploads a document to the private Supabase `documents` bucket using a
- * backend-issued signed upload token, then triggers Lumen OCR extraction.
- */
+// Uploads a document to the private Supabase `documents` bucket using a backend-issued signed upload token, then triggers Lumen OCR extraction.
 export async function uploadAndExtractDocument(file, documentType) {
   const { document, upload } = await api.post('/documents/upload-url', {
     document_type: documentType,

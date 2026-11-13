@@ -19,10 +19,7 @@ const headline = (points) => {
   return `Your take-home pay is ${change.toLowerCase()} compared with last time.`;
 };
 
-/**
- * Take-home pay for your latest pay periods as simple bars, with one sentence on
- * top. The full list is one click away for anyone who wants every number.
- */
+// Take-home pay for your latest pay periods as simple bars, with one sentence on top. The full list is one click away for anyone who wants every number.
 export default function SalaryTrendChart({ points }) {
   const withPay = points.filter((p) => p.netPay !== null && p.netPay !== undefined);
   const shown = withPay.slice(-MAX_BARS);

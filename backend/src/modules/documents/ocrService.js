@@ -17,10 +17,7 @@ const matchFirst = (text, patterns) => {
   return '';
 };
 
-/**
- * Structures raw OCR text into editable fields matching Earnest's
- * payslip / contract domain so the user can review and correct values.
- */
+// Structures raw OCR text into editable fields matching Earnest's payslip / contract domain so the user can review and correct values.
 export const parseExtractedFields = (rawText, documentType, apiStructured = {}) => {
   const text = String(rawText || '');
 
@@ -187,10 +184,7 @@ const lumenRequest = async (path, init = {}) => {
 const textOf = (item) =>
   typeof item === 'string' ? item : String(item?.Text ?? item?.text ?? item?.Value ?? '');
 
-/**
- * Builds plain text, one line per row, from a Lumen page. Prefers recognised
- * lines; falls back to words (grouped by a line index when given).
- */
+// Builds plain text, one line per row, from a Lumen page. Prefers recognised lines; falls back to words (grouped by a line index when given).
 const pageToText = (page) => {
   const lines = page?.Lines ?? page?.lines;
   if (Array.isArray(lines) && lines.length) return lines.map(textOf).join('\n');
@@ -206,11 +200,7 @@ const pageToText = (page) => {
   return [...rows.values()].join('\n');
 };
 
-/**
- * Calls the Lumen OCR API from the backend only, keeping API keys private.
- * Flow: upload raw bytes -> poll the document until READY/PARTIAL -> read pages.
- * Never logs raw document content or extracted text.
- */
+// Calls the Lumen OCR API from the backend only, keeping API keys private. Flow: upload raw bytes -> poll the document until READY/PARTIAL -> read pages.
 export const extractWithLumenOcr = async ({ fileBuffer, fileName, fileType, documentType }) => {
   if (!env.lumen.ocrEndpoint || !env.lumen.apiKey || !env.lumen.apiSecret) {
     throw new AppError(

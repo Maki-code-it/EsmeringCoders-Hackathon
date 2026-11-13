@@ -1,16 +1,4 @@
-/**
- * Payroll breakdown calculator. Pure, deterministic functions: no database, no
- * AI, no network. Every number shown as "Calculated by Earnest" comes from here.
- *
- * All math is done in whole centavos (integers) so totals never drift because
- * of floating-point rounding (e.g. 0.1 + 0.2).
- *
- * Formulas:
- *   Gross pay        = sum of all earnings
- *   Total deductions = sum of all deductions
- *   Net pay          = Gross pay - Total deductions
- *   Share of gross   = deduction amount / Gross pay x 100
- */
+// Payroll breakdown calculator. Pure, deterministic functions: no database, no AI, no network. Every number shown as "Calculated by Earnest" comes from here.
 
 export const EARNING_CATEGORIES = {
   basic: 'Basic pay',
@@ -30,8 +18,7 @@ export const DEDUCTION_CATEGORIES = {
   other: 'Other deduction',
 };
 
-// Statutory items most Philippine payslips list. Missing ones are only noted,
-// because some workers are legitimately exempt (e.g. minimum-wage earners and tax).
+// Statutory items most Philippine payslips list. Missing ones are only noted, because some workers are legitimately exempt (e.g. minimum-wage earners and tax).
 const COMMON_STATUTORY = ['sss', 'philhealth', 'pagibig'];
 
 // Differences up to 1 peso are treated as normal rounding on a payslip.
@@ -50,14 +37,6 @@ const normalizeLines = (lines, labels) =>
     centavos: toCentavos(line.amount),
   }));
 
-/**
- * @param {object} input
- * @param {{category: string, description?: string, amount: number}[]} input.earnings
- * @param {{category: string, description?: string, amount: number}[]} input.deductions
- * @param {number|null} [input.statedNetPay]  Net pay printed on the payslip, if given.
- * @param {string|null} [input.payPeriodStart]
- * @param {string|null} [input.payPeriodEnd]
- */
 export function calculateBreakdown({
   earnings = [],
   deductions = [],

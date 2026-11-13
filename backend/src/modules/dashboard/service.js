@@ -12,10 +12,7 @@ import { dashboardRepository } from './repository.js';
 
 const LABELS = { source: 'calculated' };
 
-/**
- * Dashboard business logic. Reads data other modules own and derives
- * statistics from it; it never duplicates their calculations or writes data.
- */
+// Dashboard business logic. Reads data other modules own and derives statistics from it; it never duplicates their calculations or writes data.
 export const createService = (repo = dashboardRepository) => {
   // Pending records only hold column defaults (0), so they are left out of stats.
   const loadRecords = async (userId, range) =>
@@ -40,11 +37,7 @@ export const createService = (repo = dashboardRepository) => {
       };
     },
 
-    /**
-     * History is assembled from existing tables (there is no history table):
-     * uploaded documents and payroll breakdowns, newest first.
-     * kind: 'payslip' | 'contract' | 'payroll'
-     */
+    // History is assembled from existing tables (there is no history table): uploaded documents and payroll breakdowns, newest first. kind: 'payslip' | 'contract' | 'payroll'
     async getHistory(userId, { limit, offset, type }) {
       const [documents, records] = await Promise.all([
         repo.listDocuments(userId),

@@ -2,10 +2,10 @@ import { Router } from 'express';
 import { env } from '../../config/env.js';
 import { AppError, sendSuccess } from '../../middleware/apiResponse.js';
 import { validateRequest } from '../../middleware/validateRequest.js';
-import { makeSystemPrompt } from './prompts.js';
-import { findRelevantReferences, formatReferencesForPrompt, toReferenceLinks } from './referenceLibrary.js';
-import { makeReferenceFallback } from './referenceAnswers.js';
-import { faqReferenceLinks, findFaq, formatFaqForPrompt } from './faqLibrary.js';
+import { makeSystemPrompt } from './knowledge/prompts.js';
+import { findRelevantReferences, formatReferencesForPrompt, toReferenceLinks } from './knowledge/referenceLibrary.js';
+import { makeReferenceFallback } from './knowledge/referenceAnswers.js';
+import { faqReferenceLinks, findFaq, formatFaqForPrompt } from './knowledge/faqLibrary.js';
 
 const router = Router();
 const MAX_HISTORY = 10;

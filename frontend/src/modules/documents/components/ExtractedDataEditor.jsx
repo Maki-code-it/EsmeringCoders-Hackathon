@@ -44,8 +44,7 @@ export default function ExtractedDataEditor({ document, onSave, onReExtract }) {
     try {
       await onSave(document.id, {
         extracted_data: fields,
-        // Only the confirmed fields are kept. The raw OCR text holds the whole payslip,
-        // so it is cleared once the user has verified the values.
+        // Only the confirmed fields are kept. The raw OCR text holds the whole payslip, so it is cleared once the user has verified the values.
         extracted_text: '',
       });
       setRawText('');

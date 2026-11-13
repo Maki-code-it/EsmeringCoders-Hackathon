@@ -1,9 +1,6 @@
 import { DEDUCTION_CATEGORIES, EARNING_CATEGORIES } from './calculator.js';
 
-/**
- * Validators shaped for the shared validateRequest middleware
- * (return { field: message }; empty object = valid). Messages never echo values.
- */
+// Validators shaped for the shared validateRequest middleware (return { field: message }; empty object = valid). Messages never echo values.
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

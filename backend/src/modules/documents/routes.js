@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { validateRequest } from '../../middleware/validateRequest.js';
-import { requireAuthenticatedUser } from './userContext.js';
+import { requireDocumentsUser } from '../../middleware/userContext.js';
 import {
   validateCreateDocument,
   validateDocumentIdParam,
@@ -17,7 +17,7 @@ import {
 
 const router = Router();
 
-router.use(requireAuthenticatedUser);
+router.use(requireDocumentsUser);
 
 router.get('/', handleListDocuments);
 router.post('/upload-url', validateRequest(validateCreateDocument), handleInitiateUpload);

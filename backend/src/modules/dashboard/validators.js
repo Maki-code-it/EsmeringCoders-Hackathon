@@ -1,7 +1,4 @@
-/**
- * Query validators and parsers, shaped for the shared validateRequest
- * middleware (return { field: message }; empty object = valid).
- */
+// Query validators and parsers, shaped for the shared validateRequest middleware (return { field: message }; empty object = valid).
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TYPE_PATTERN = /^[a-z_]{1,50}$/;

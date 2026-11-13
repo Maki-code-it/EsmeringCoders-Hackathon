@@ -1,7 +1,4 @@
-/**
- * Form helpers for the payroll page. Formatting and form shaping only: all
- * payroll math happens in the backend calculator (/api/payroll).
- */
+// Form helpers for the payroll page. Formatting and form shaping only: all payroll math happens in the backend calculator (/api/payroll).
 
 // Must match backend/src/modules/payroll/calculator.js
 export const EARNING_OPTIONS = [
@@ -102,10 +99,7 @@ export const formatDate = (value) => {
 export const formatPeriod = (start, end) =>
   start && end ? `${formatDate(start)} - ${formatDate(end)}` : 'Pay period not set';
 
-/**
- * Turn validation details like { "earnings[0].amount": "..." } into readable
- * lines. The API index counts only filled lines, so map it back to the form row.
- */
+// Turn validation details like { "earnings[0].amount": "..." } into readable lines. The API index counts only filled lines, so map it back to the form row.
 export const describeValidation = (details, form) => {
   if (!details || typeof details !== 'object') return [];
   return Object.entries(details).map(([field, message]) => {
@@ -137,10 +131,7 @@ const money = (value) => {
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
 };
 
-/**
- * Builds payroll form state from a confirmed payslip document's extracted_data.
- * Only fills what the document has; anything left blank stays for the user.
- */
+// Builds payroll form state from a confirmed payslip document's extracted_data. Only fills what the document has; anything left blank stays for the user.
 export const formFromExtracted = (data = {}) => {
   const earnings = [];
   if (money(data.basic_salary)) earnings.push(newLine('basic', 'Basic pay', money(data.basic_salary)));

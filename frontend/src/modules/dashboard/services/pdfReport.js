@@ -1,10 +1,6 @@
 import { buildChartGeometry, formatDate } from '../lib/format.js';
 
-/**
- * Builds the payroll PDF with jsPDF's built-in fonts. Those fonts have no peso
- * sign or typographic dashes, so amounts print as "PHP 1,234.50" and missing
- * values as "-". Pure of browser APIs: it returns the document, the caller saves it.
- */
+// Builds the payroll PDF with jsPDF's built-in fonts. Those fonts have no peso sign or typographic dashes, so amounts print as "PHP 1,234.50" and missing values as "-".
 
 const PAGE = { w: 595.28, h: 841.89, m: 40 };
 const CONTENT_W = PAGE.w - PAGE.m * 2;

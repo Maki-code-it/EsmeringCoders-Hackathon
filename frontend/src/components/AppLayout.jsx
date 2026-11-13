@@ -11,11 +11,7 @@ function Wordmark({ className }) {
   );
 }
 
-/**
- * Single shared shell: floating glass sidebar + floating glass top bar.
- * Page content scrolls underneath the top bar, so the glass blur is visible.
- * @param {{ id: string, label: string, icon: Component }[]} navItems
- */
+// Single shared shell: floating glass sidebar + floating glass top bar. Page content scrolls underneath the top bar, so the glass blur is visible.
 export default function AppLayout({ navItems, activeId, onNavigate, topbarRight, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const activeLabel = navItems.find((item) => item.id === activeId)?.label;

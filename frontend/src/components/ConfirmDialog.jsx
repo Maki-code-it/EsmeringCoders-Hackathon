@@ -1,11 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { Button } from '@/components/ui/button.jsx';
 
-/**
- * Shared confirmation modal for destructive actions (native <dialog>, so focus
- * is trapped, Escape cancels and the page behind is inert while it is open).
- * The caller owns `open`; clicking the backdrop or Cancel calls onCancel.
- */
+// Shared confirmation modal for destructive actions (native <dialog>, so focus is trapped, Escape cancels and the page behind is inert while it is open).
 export default function ConfirmDialog({
   open,
   title,

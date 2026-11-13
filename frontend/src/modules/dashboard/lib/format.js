@@ -1,7 +1,4 @@
-/**
- * Pure formatting + chart helpers for the dashboard. No React, no aliases, so
- * they can be unit tested with plain Node.
- */
+// Pure formatting + chart helpers for the dashboard. No React, no aliases, so they can be unit tested with plain Node.
 
 export const formatMoney = (value, currency = 'PHP') => {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
@@ -38,10 +35,7 @@ export const describeChange = (changePct) => {
   return `${changePct > 0 ? 'Up' : 'Down'} ${Math.abs(changePct).toFixed(1)}%`;
 };
 
-/**
- * Map trend points to SVG coordinates for a net-pay line chart.
- * Points without a net pay are skipped. Returns { points, path, min, max }.
- */
+// Map trend points to SVG coordinates for a net-pay line chart. Points without a net pay are skipped. Returns { points, path, min, max }.
 export const buildChartGeometry = (trend, { width = 640, height = 220, padding = 28 } = {}) => {
   const usable = trend.filter((p) => p.netPay !== null && p.netPay !== undefined);
   if (!usable.length) return { points: [], path: '', min: null, max: null };
