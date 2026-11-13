@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/components/utils.js';
 import { Button } from '@/components/ui/button.jsx';
+import logoUrl from '@/assets/logo.png';
+
+// Decorative: the wordmark next to it already names the app.
+function LogoMark({ className }) {
+  return <img src={logoUrl} alt="" width="40" height="40" className={cn('brand-mark', className)} />;
+}
 
 function Wordmark({ className }) {
   return (
@@ -48,9 +54,7 @@ export default function AppLayout({ navItems, activeId, onNavigate, topbarRight,
       >
         <div className="mb-7 flex items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-3">
-            <span className="brand-mark" aria-hidden="true">
-              ₱
-            </span>
+            <LogoMark />
             <div>
               <Wordmark className="block text-lg leading-tight" />
               <p className="text-xs leading-snug text-muted-foreground">Understand Your Pay. Know Your Rights.</p>
@@ -93,6 +97,7 @@ export default function AppLayout({ navItems, activeId, onNavigate, topbarRight,
           >
             <Menu className="h-5 w-5" />
           </Button>
+          <LogoMark className="h-8 w-8 rounded-[0.7rem] md:hidden" />
           <Wordmark className="md:hidden" />
           {activeLabel && (
             <p className="hidden text-sm text-muted-foreground md:block">

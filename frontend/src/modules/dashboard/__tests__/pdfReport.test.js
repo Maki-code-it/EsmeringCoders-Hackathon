@@ -50,6 +50,14 @@ test('builds a one page PDF for a normal report', () => {
   assert.ok(doc.output('arraybuffer').byteLength > 1000);
 });
 
+test('draws the logo in the header when provided', async () => {
+  const { readFileSync } = await import('node:fs');
+  const png = readFileSync(new URL('../../../assets/logo.png', import.meta.url)).toString('base64');
+  const doc = buildPdf(report([point(0)]), jsPDF, { logo: `data:image/png;base64,${png}` });
+  assert.equal(doc.getNumberOfPages(), 1);
+  assert.ok(doc.output().includes('/Subtype /Image'));
+});
+
 test('empty report still builds', () => {
   assert.equal(buildPdf(report([]), jsPDF).getNumberOfPages(), 1);
 });
